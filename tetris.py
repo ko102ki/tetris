@@ -106,7 +106,7 @@ def block_init(code):
 
 def set_block(data, block, loc, first=False):
     block_index = randint(0, 6)
-    data = block_init(block_index)
+    block = block_init(block_index)
     loc = [4, 0]
     field_mapping(data, block, loc)
 
@@ -141,59 +141,66 @@ def on_key_down_handler(data, block, loc, screen, block_img):
 # 移動or回転をさせてから再度field_mapping()をする。引数にclearはつけない
 def block_control(direct, data, block, loc, screen, block_img):
     # 移動
-    if direct == 'left':
-        if get_left_hit(data, block, loc):
-            return True
-        field_mapping(data, block, loc, 'clear')
-        loc[0] -= 1
-        #  Iミノ用の処理
-        if loc[0] < 0:
-            size_reduction(block, loc)
-
-    if direct == 'right':
-        if get_right_hit(data, block, loc):
-            return True
-        field_mapping(data, block, loc, 'clear')
-        loc[0] += 1
-
-    if direct == 'down':
-        if get_bottom_hit(data, block, loc):
-            field_mapping(data, block, loc, 'fixed')
-            set_block(data, block, loc)
-        field_mapping(data, block, loc, 'clear')
-        loc[1] += 1
-
-    # 回転
-    if direct == 'left_turn':
-        if get_rotate_hit(direct, data, block, loc):
-            return True
-        field_mapping(data, block, loc, 'clear')  # block内の要素をすべて0にする
-        # 左の壁際用
-        if loc[0] == 0:
-            loc[0] += 1
-        # 右の壁際用
-        if loc[0] + len(block[0]) == 12:
+    for i in range(1):
+        if direct == 'left':
+            if get_left_hit(data, block, loc):
+                return True
+            field_mapping(data, block, loc, 'clear')
             loc[0] -= 1
-        if loc[0] + len(block[0]) > 12:
-            loc[0] -= 2
-        block_rotate(direct, block)
+            #  Iミノ用の処理
+            if loc[0] < 0:
+                size_reduction(block, loc)
+            field_mapping(data, block, loc)
 
-    if direct == 'right_turn':
-        if get_rotate_hit(direct, data, block, loc):
-            return True
-        field_mapping(data, block, loc, 'clear')  # block内の要素をすべて0にする
-        # 左の壁際用
-        if loc[0] == 0:
+        elif direct == 'right':
+            if get_right_hit(data, block, loc):
+                return True
+            field_mapping(data, block, loc, 'clear')
             loc[0] += 1
-        # 右の壁際用
-        if loc[0] + len(block[0]) == 12:
-            loc[0] -= 1
-        if loc[0] + len(block[0]) > 12:
-            loc[0] -= 2
-        block_rotate(direct, block)
+            field_mapping(data, block, loc)
+
+        elif direct == 'down':
+            if get_bottom_hit(data, block, loc):
+                field_mapping(data, block, loc, 'fixed')
+                set_block(data, block, loc)
+                break
+            field_mapping(data, block, loc, 'clear')
+            loc[1] += 1
+            field_mapping(data, block, loc)
+
+        # 回転
+        elif direct == 'left_turn':
+            if get_rotate_hit(direct, data, block, loc):
+                return True
+            field_mapping(data, block, loc, 'clear')  # block内の要素をすべて0にする
+            # 左の壁際用
+            if loc[0] == 0:
+                loc[0] += 1
+            # 右の壁際用
+            if loc[0] + len(block[0]) == 12:
+                loc[0] -= 1
+            if loc[0] + len(block[0]) > 12:
+                loc[0] -= 2
+            block_rotate(direct, block)
+            field_mapping(data, block, loc)
+
+        elif direct == 'right_turn':
+            if get_rotate_hit(direct, data, block, loc):
+                return True
+            field_mapping(data, block, loc, 'clear')  # block内の要素をすべて0にする
+            # 左の壁際用
+            if loc[0] == 0:
+                loc[0] += 1
+            # 右の壁際用
+            if loc[0] + len(block[0]) == 12:
+                loc[0] -= 1
+            if loc[0] + len(block[0]) > 12:
+                loc[0] -= 2
+            block_rotate(direct, block)
+            field_mapping(data, block, loc)
 
     # フィールドに反映後、画面描画
-    field_mapping(data, block, loc)
+#    field_mapping(data, block, loc)
     draw_field(data, screen, block_img)
 
     return False
