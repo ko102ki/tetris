@@ -18,6 +18,7 @@ class Mino:
      [1, 1, 1, 1],
      [0, 0, 0, 0],
      [0, 0, 0, 0],]
+
     _o = \
     [[2, 2],
      [2, 2],]
@@ -101,28 +102,22 @@ class Window:
         screen_size = (288, 552)
         screen = pygame.display.set_mode(screen_size)
         block_img = Window.load_image(self)
-        Window.mapping(self)
-        while True:
-            Window.draw(self, screen, block_img)
-#            Player.mino_control(self)
+#        Window.mapping(self)
+        Window.draw(self, screen, block_img)
 
 
-    def mapping(self):
-        self.loc = Block().rtn_loc()
-        self.mino = Mino().create()
-
-        Mino().create()
-        self.loc_x = self.loc[0]
-        self.loc_y = self.loc[1]
-        self.mino_len = len(self.mino)
+    def mapping(self, mino, loc):
+        self.loc_x = loc[0]
+        self.loc_y = loc[1]
+        self.mino_len = len(mino)
         self.end_x = self.loc_x + self.mino_len
         self.end_y = self.loc_y + self.mino_len
 
         for y in range(self.loc_y, self.end_y):
             for x in range(self.loc_x, self.end_x):
-                mino_x = x - self.loc_x
-                mino_y = y - self.loc_y
-                Window.field[y][x] = self.mino[mino_y][mino_x]
+                self.mino_x = x - self.loc_x
+                self.mino_y = y - self.loc_y
+                Window.field[y][x] = mino[self.mino_y][self.mino_x]
         return Window.field
 
     def draw(self, screen, block_img):
@@ -168,4 +163,10 @@ class Player:
                 if event.key == K_z:
                     Mino.rotate(self, mino)
 
-Window()
+loc = Block().rtn_loc()
+mino = Mino().create()
+window = Window()
+window.mapping(mino, loc)
+print(loc)
+print(mino)
+print(window.block_img)
