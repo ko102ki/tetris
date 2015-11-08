@@ -260,47 +260,79 @@ window.mapping(mino.pattern, mino.loc, 'drop')
 
 fixed = False
 
+lcnt = 0
+rcnt = 0
+dcnt = 0
+
 while True:
-    if fixed:
-        mino = Mino()
-        fixed = False
+#    if fixed:
+#        mino = Mino()
+#        fixed = False
 
     window.draw(screen)
+    pygame.display.update()
 
     pygame.event.pump()
 
     pressed = pygame.key.get_pressed()
+
+    if pressed[K_LEFT]:
+        lcnt += 1
+        if lcnt == 100:
+            if window.left_hit(mino.pattern, mino.loc):
+                pass
+            else:
+                window.mapping(mino.pattern, mino.loc, 'clear')
+                mino.control('left')
+                window.mapping(mino.pattern, mino.loc, 'drop')
+            lcnt = 0
+
+    if pressed[K_RIGHT]:
+        rcnt += 1
+        if rcnt == 100:
+            if window.right_hit(mino.pattern, mino.loc):
+                pass
+            else:
+                window.mapping(mino.pattern, mino.loc, 'clear')
+                mino.control('right')
+                window.mapping(mino.pattern, mino.loc, 'drop')
+            rcnt = 0
+
     if pressed[K_DOWN]:
-        if window.bottom_hit(mino.pattern, mino.loc):
-            window.mapping(mino.pattern, mino.loc, 'fix')
-            window.line_check()
-            window.mapping(mino.pattern, mino.loc, 'lclear')
-            fixed = True
-        else:
-            window.mapping(mino.pattern, mino.loc, 'clear')
-            mino.control('down')
-            window.mapping(mino.pattern, mino.loc, 'drop')
+        dcnt += 1
+        if dcnt == 95:
+            if window.bottom_hit(mino.pattern, mino.loc):
+                window.mapping(mino.pattern, mino.loc, 'fix')
+                window.line_check()
+                window.mapping(mino.pattern, mino.loc, 'lclear')
+                fixed = True
+                mino = Mino()
+            else:
+                window.mapping(mino.pattern, mino.loc, 'clear')
+                mino.control('down')
+                window.mapping(mino.pattern, mino.loc, 'drop')
+            dcnt = 0
 
     for event in pygame.event.get():
         if event.type == KEYDOWN:
             if event.key == K_ESCAPE:
                 sys.quit()
 
-            if event.key == K_LEFT:
-                if window.left_hit(mino.pattern, mino.loc):
-                    break
-                else:
-                    window.mapping(mino.pattern, mino.loc, 'clear')
-                    mino.control('left')
-                    window.mapping(mino.pattern, mino.loc, 'drop')
-
-            if event.key == K_RIGHT:
-                if window.right_hit(mino.pattern, mino.loc):
-                    break
-                else:
-                    window.mapping(mino.pattern, mino.loc, 'clear')
-                    mino.control('right')
-                    window.mapping(mino.pattern, mino.loc, 'drop')
+#            if event.key == K_LEFT:
+#                if window.left_hit(mino.pattern, mino.loc):
+#                    break
+#                else:
+#                    window.mapping(mino.pattern, mino.loc, 'clear')
+#                    mino.control('left')
+#                    window.mapping(mino.pattern, mino.loc, 'drop')
+#
+#            if event.key == K_RIGHT:
+#                if window.right_hit(mino.pattern, mino.loc):
+#                    break
+#                else:
+#                    window.mapping(mino.pattern, mino.loc, 'clear')
+#                    mino.control('right')
+#                    window.mapping(mino.pattern, mino.loc, 'drop')
 
 #            if event.key == K_DOWN:
 #                if window.bottom_hit(mino.pattern, mino.loc):
