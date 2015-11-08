@@ -123,6 +123,13 @@ class Window:
         end_x = loc_x + plen
         end_y = loc_y + plen
 
+        if process == 'lclear':
+            for y in self.lines:
+                del self._field[y]
+            for y in self.lines:
+                self._field.insert(2, [99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  99])
+            return 0
+
         for y in range(loc_y, end_y):
             for x in range(loc_x, end_x):
                 px = x - loc_x
@@ -221,6 +228,18 @@ class Window:
                         return True
         return False
 
+    def line_check(self):
+        self.lines = []
+        for y in range(21, 2, -1):
+            zero_cnt = self._field[y].count(0)
+            if zero_cnt == 0:
+                self.lines.append(y)
+            if zero_cnt == 10:
+                break
+#        print(lines)
+
+
+
 class Player:
 
     def mino_control(self):
@@ -248,10 +267,25 @@ while True:
 
     window.draw(screen)
 
+    pygame.event.pump()
+
+    pressed = pygame.key.get_pressed()
+    if pressed[K_DOWN]:
+        if window.bottom_hit(mino.pattern, mino.loc):
+            window.mapping(mino.pattern, mino.loc, 'fix')
+            window.line_check()
+            window.mapping(mino.pattern, mino.loc, 'lclear')
+            fixed = True
+        else:
+            window.mapping(mino.pattern, mino.loc, 'clear')
+            mino.control('down')
+            window.mapping(mino.pattern, mino.loc, 'drop')
+
     for event in pygame.event.get():
         if event.type == KEYDOWN:
             if event.key == K_ESCAPE:
                 sys.quit()
+
             if event.key == K_LEFT:
                 if window.left_hit(mino.pattern, mino.loc):
                     break
@@ -259,6 +293,7 @@ while True:
                     window.mapping(mino.pattern, mino.loc, 'clear')
                     mino.control('left')
                     window.mapping(mino.pattern, mino.loc, 'drop')
+
             if event.key == K_RIGHT:
                 if window.right_hit(mino.pattern, mino.loc):
                     break
@@ -266,15 +301,19 @@ while True:
                     window.mapping(mino.pattern, mino.loc, 'clear')
                     mino.control('right')
                     window.mapping(mino.pattern, mino.loc, 'drop')
-            if event.key == K_DOWN:
-                if window.bottom_hit(mino.pattern, mino.loc):
-                    window.mapping(mino.pattern, mino.loc, 'fix')
-                    fixed = True
-                    break
-                else:
-                    window.mapping(mino.pattern, mino.loc, 'clear')
-                    mino.control('down')
-                    window.mapping(mino.pattern, mino.loc, 'drop')
+
+#            if event.key == K_DOWN:
+#                if window.bottom_hit(mino.pattern, mino.loc):
+#                    window.mapping(mino.pattern, mino.loc, 'fix')
+#                    window.line_check()
+#                    window.mapping(mino.pattern, mino.loc, 'lclear')
+#                    fixed = True
+#                    break
+#                else:
+#                    window.mapping(mino.pattern, mino.loc, 'clear')
+#                    mino.control('down')
+#                    window.mapping(mino.pattern, mino.loc, 'drop')
+
             if event.key == K_z:
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.rotate('left')
@@ -284,6 +323,7 @@ while True:
                     break
                 else:
                     window.mapping(mino.pattern, mino.loc, 'drop')
+
             if event.key == K_x:
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.rotate('right')
