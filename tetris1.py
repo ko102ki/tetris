@@ -65,13 +65,13 @@ class Mino:
             return Mino._t
 
     def rotate(self, direct):
-        plen = len(self.pattern)
-        pcopy = [[0 for col in range(plen)] for row in range(plen)]
+        p_len = len(self.pattern)
+        p_copy = [[0 for col in range(p_len)] for row in range(p_len)]
 
         if direct == 'left':
-            for y in range(plen):
-                for x in range(plen):
-                    pcopy[plen - 1 - x][y] = self.pattern[y][x]
+            for y in range(p_len):
+                for x in range(p_len):
+                    p_copy[p_len - 1 - x][y] = self.pattern[y][x]
 
             self.state[1] -= 1
             if self.state[1] == -4:
@@ -81,9 +81,9 @@ class Mino:
                 self.state[0] = 0
 
         if direct == 'right':
-            for y in range(plen):
-                for x in range(plen):
-                    pcopy[x][plen - 1 - y] = self.pattern[y][x]
+            for y in range(p_len):
+                for x in range(p_len):
+                    p_copy[x][p_len - 1 - y] = self.pattern[y][x]
 
             self.state[1] += 1
             if self.state[1] == 4:
@@ -92,9 +92,9 @@ class Mino:
             if self.state[0] == 4:
                 self.state[0] = 0
 
-        for y in range(plen):
-            for x in range(plen):
-                self.pattern[y][x] = pcopy[y][x]
+        for y in range(p_len):
+            for x in range(p_len):
+                self.pattern[y][x] = p_copy[y][x]
 
     def control(self, direct):
         if direct == 'left':
@@ -137,11 +137,11 @@ class Window:
     def mapping(self, pattern, loc, process='drop', axis=[0,0]):
         loc_x = loc[0] + axis[0]
         loc_y = loc[1] + axis[1]
-        plen = len(pattern)
-        end_x = loc_x + plen
-        end_y = loc_y + plen
+        p_len = len(pattern)
+        end_x = loc_x + p_len
+        end_y = loc_y + p_len
 
-        if process == 'lclear':
+        if process == 'l_clear':
             for y in self.lines:
                 del self._field[y]
             for y in self.lines:
@@ -195,9 +195,9 @@ class Window:
         self.block_img[7] = pygame.image.load('data/w.bmp')
 
     def left_hit(self, pattern, loc):
-        plen = len(pattern)
-        for x in range(plen):
-            for y in range(plen):
+        p_len = len(pattern)
+        for x in range(p_len):
+            for y in range(p_len):
                 if pattern[y][x]:
                     fx = loc[0] + x
                     fy = loc[1] + y
@@ -206,9 +206,9 @@ class Window:
         return False
 
     def right_hit(self, pattern, loc):
-        plen = len(pattern)
-        for x in range(plen - 1, -1, -1):
-            for y in range(plen):
+        p_len = len(pattern)
+        for x in range(p_len - 1, -1, -1):
+            for y in range(p_len):
                 if pattern[y][x]:
                     fx = loc[0] + x
                     fy = loc[1] + y
@@ -217,9 +217,9 @@ class Window:
         return False
 
     def bottom_hit(self, pattern, loc):
-        plen = len(pattern)
-        for y in range(plen - 1, -1, -1):
-            for x in range(plen):
+        p_len = len(pattern)
+        for y in range(p_len - 1, -1, -1):
+            for x in range(p_len):
                 if pattern[y][x]:
                     fx = loc[0] + x
                     fy = loc[1] + y
@@ -228,12 +228,12 @@ class Window:
         return False
 
     def rotate_hit(self, pattern, loc, state):
-        plen = len(pattern)
-#        pcopy = [[0 for col in range(plen)] for row in range(plen)]
+        p_len = len(pattern)
+#        p_copy = [[0 for col in range(p_len)] for row in range(p_len)]
 #        revise = 0
-#        for y in range(plen):
-#            for x in range(plen):
-#                pcopy[y][x] = pattern[y][x]
+#        for y in range(p_len):
+#            for x in range(p_len):
+#                p_copy[y][x] = pattern[y][x]
 
 #        mino.rotate(direct, pattern)
         test_list = []
@@ -256,8 +256,8 @@ class Window:
             test_list = [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]]
 
         for axis in test_list:
-            for y in range(plen):
-                for x in range(plen):
+            for y in range(p_len):
+                for x in range(p_len):
                     if pattern[y][x]:
                         fx = loc[0] + x + axis[0]
                         fy = loc[1] + y + axis[1]
@@ -274,41 +274,29 @@ class Window:
                 self.lines.append(y)
             if zero_cnt == 10:
                 break
-#        print(lines)
 
 
-
-class Player:
-
-    def mino_control(self):
-        for event in pygame.event.get():
-            if event.type == KEYDOWN:
-                if event.key == K_z:
-                    loc[1] += 1
-
-#loc = Block().rtn_loc()
 pygame.init()
 screen_size = (288, 552)
 screen = pygame.display.set_mode(screen_size)
 
-#インスタンス生成
+# インスタンス生成
 mino = Mino()
 window = Window()
 window.mapping(mino.pattern, mino.loc, 'drop')
-
 fixed = False
-
-lcnt = 0
-rcnt = 0
-dcnt = 0
+# キー入力用カウンタ
+l_cnt = 0
+r_cnt = 0
+d_cnt = 0
 
 TIMEREVENT = pygame.USEREVENT
 #pygame.time.set_timer(TIMEREVENT, 100)
 
 while True:
-#    if fixed:
-#        mino = Mino()
-#        fixed = False
+    if fixed:
+        mino = Mino()
+        fixed = False
     window.draw(screen)
     pygame.display.update()
 
@@ -317,48 +305,43 @@ while True:
     pressed = pygame.key.get_pressed()
 
     if pressed[K_LEFT]:
-        lcnt += 1
-        if lcnt == 3:
-            if window.left_hit(mino.pattern, mino.loc):
-                pass
-            else:
+        l_cnt += 1
+        if l_cnt ==100:
+            if not window.left_hit(mino.pattern, mino.loc):
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.control('left')
                 window.mapping(mino.pattern, mino.loc, 'drop')
-            lcnt = 0
+            l_cnt = 0
 
     if pressed[K_RIGHT]:
-        rcnt += 1
-        if rcnt == 3:
-            if window.right_hit(mino.pattern, mino.loc):
-                pass
-            else:
+        r_cnt += 1
+        if r_cnt == 100:
+            if not window.right_hit(mino.pattern, mino.loc):
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.control('right')
                 window.mapping(mino.pattern, mino.loc, 'drop')
-            rcnt = 0
+            r_cnt = 0
 
     if pressed[K_DOWN]:
-        dcnt += 1
-        if dcnt == 3:
-            if window.bottom_hit(mino.pattern, mino.loc):
-                window.mapping(mino.pattern, mino.loc, 'fix')
-                window.line_check()
-                window.mapping(mino.pattern, mino.loc, 'lclear')
-                fixed = True
-                mino = Mino()
-            else:
+        d_cnt += 1
+        if d_cnt == 3:
+            if not window.bottom_hit(mino.pattern, mino.loc):
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.control('down')
                 window.mapping(mino.pattern, mino.loc, 'drop')
-            dcnt = 0
+            else:
+                window.mapping(mino.pattern, mino.loc, 'fix')
+                window.line_check()
+                window.mapping(mino.pattern, mino.loc, 'l_clear')
+                fixed = True
+            d_cnt = 0
 
     for event in pygame.event.get():
         if event.type == TIMEREVENT:
             if window.bottom_hit(mino.pattern, mino.loc):
                 window.mapping(mino.pattern, mino.loc, 'fix')
                 window.line_check()
-                window.mapping(mino.pattern, mino.loc, 'lclear')
+                window.mapping(mino.pattern, mino.loc, 'l_clear')
                 fixed = True
                 mino = Mino()
             else:
@@ -393,11 +376,4 @@ while True:
                     mino.state[0] += 1
 
     pygame.display.update()
-#mino = Mino().create()
-#window = Window()
-#window.mapping(mino, loc)
-#
-#print(loc)
-#print(mino)
-#print(window.self.block_img)
 
