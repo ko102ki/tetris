@@ -264,11 +264,13 @@ lcnt = 0
 rcnt = 0
 dcnt = 0
 
+TIMEREVENT = pygame.USEREVENT
+pygame.time.set_timer(TIMEREVENT, 100)
+
 while True:
 #    if fixed:
 #        mino = Mino()
 #        fixed = False
-
     window.draw(screen)
     pygame.display.update()
 
@@ -278,7 +280,7 @@ while True:
 
     if pressed[K_LEFT]:
         lcnt += 1
-        if lcnt == 100:
+        if lcnt == 3:
             if window.left_hit(mino.pattern, mino.loc):
                 pass
             else:
@@ -289,7 +291,7 @@ while True:
 
     if pressed[K_RIGHT]:
         rcnt += 1
-        if rcnt == 100:
+        if rcnt == 3:
             if window.right_hit(mino.pattern, mino.loc):
                 pass
             else:
@@ -300,7 +302,7 @@ while True:
 
     if pressed[K_DOWN]:
         dcnt += 1
-        if dcnt == 95:
+        if dcnt == 3:
             if window.bottom_hit(mino.pattern, mino.loc):
                 window.mapping(mino.pattern, mino.loc, 'fix')
                 window.line_check()
@@ -314,6 +316,17 @@ while True:
             dcnt = 0
 
     for event in pygame.event.get():
+        if event.type == TIMEREVENT:
+            if window.bottom_hit(mino.pattern, mino.loc):
+                window.mapping(mino.pattern, mino.loc, 'fix')
+                window.line_check()
+                window.mapping(mino.pattern, mino.loc, 'lclear')
+                fixed = True
+                mino = Mino()
+            else:
+                window.mapping(mino.pattern, mino.loc, 'clear')
+                mino.control('down')
+                window.mapping(mino.pattern, mino.loc, 'drop')
         if event.type == KEYDOWN:
             if event.key == K_ESCAPE:
                 sys.quit()
