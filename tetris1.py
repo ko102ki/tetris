@@ -223,6 +223,7 @@ class Window:
     def rotate_hit(self, pattern, loc, state):
         p_len = len(pattern)
         test_list = []
+        collision_flag = False
 
         if state == [0, 1]:
             test_list = [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]]
@@ -241,20 +242,23 @@ class Window:
         if state == [1, 0]:
             test_list = [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]]
 
-        for axis in test_list:
+        for shift_axis in test_list:
             for y in range(p_len):
                 for x in range(p_len):
                     if pattern[y][x]:
-                        fx = loc[0] + x + axis[0]
-                        fy = loc[1] + y + axis[1]
+                        fx = loc[0] + x + shift_axis[0]
+                        fy = loc[1] + y + shift_axis[1]
                         if self._field[fy][fx] > 10:
+                            collision_flag = True
                             break
-                else:
-                    continue
-                break
+                if collision_flag:
+                    break
+            if collision_flag:
+                continue
             else:
-                self.axis = axis
-            continue
+                self.axis = shift_axis
+                state[0] = state[1]
+                return False
         return True
 #        self.axis = axis
 #        state[0] = state[1]
@@ -367,5 +371,6 @@ while True:
                 else:
                     window.mapping(mino.pattern, mino.loc, mino.state, window.axis)
 
+    window.draw(screen)
     pygame.display.update()
 
