@@ -74,11 +74,7 @@ class Mino:
                     p_copy[p_len - 1 - x][y] = self.pattern[y][x]
 
             self.state[1] -= 1
-            if self.state[1] == -4:
-                self.state[1] = 0
-
-            if self.state[0] == -4:
-                self.state[0] = 0
+            self.state[1] %= 4
 
         if direct == 'right':
             for y in range(p_len):
@@ -86,11 +82,7 @@ class Mino:
                     p_copy[x][p_len - 1 - y] = self.pattern[y][x]
 
             self.state[1] += 1
-            if self.state[1] == 4:
-                self.state[1] = 0
-
-            if self.state[0] == 4:
-                self.state[0] = 0
+            self.state[1] %= 4
 
         for y in range(p_len):
             for x in range(p_len):
@@ -133,6 +125,7 @@ class Window:
 
     def __init__(self):
         self.load_image()
+        self.axis = []
 
     def mapping(self, pattern, loc, process='drop', axis=[0,0]):
         loc_x = loc[0] + axis[0]
@@ -229,13 +222,6 @@ class Window:
 
     def rotate_hit(self, pattern, loc, state):
         p_len = len(pattern)
-#        p_copy = [[0 for col in range(p_len)] for row in range(p_len)]
-#        revise = 0
-#        for y in range(p_len):
-#            for x in range(p_len):
-#                p_copy[y][x] = pattern[y][x]
-
-#        mino.rotate(direct, pattern)
         test_list = []
 
         if state == [0, 1]:
@@ -246,13 +232,13 @@ class Window:
             test_list = [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]]
         if state == [3, 0]:
             test_list = [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]]
-        if state == [0, -1]:
+        if state == [0, 3]:
             test_list = [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]]
-        if state == [-1, -2]:
+        if state == [3, 2]:
             test_list = [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]]
-        if state == [-2, -3]:
+        if state == [2, 1]:
             test_list = [[0, 0], [-1, -1], [-1, -1], [0, 2], [-1, 2]]
-        if state == [-3, 0]:
+        if state == [1, 0]:
             test_list = [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]]
 
         for axis in test_list:
@@ -261,9 +247,16 @@ class Window:
                     if pattern[y][x]:
                         fx = loc[0] + x + axis[0]
                         fy = loc[1] + y + axis[1]
-                        if self._field[fy][fx] > 10:
-                            return True
-            self.mapping(pattern, loc, axis)
+                        if self._field[fy][fx] < 10:
+                            break
+                        else:
+                            break
+                continue
+        self.axis = axis
+        state[0] = state[1]
+            return False
+#            self.mapping(pattern, loc, 'drop', axis)
+#            break
 
 
     def line_check(self):
@@ -324,7 +317,7 @@ while True:
 
     if pressed[K_DOWN]:
         d_cnt += 1
-        if d_cnt == 3:
+        if d_cnt == 100:
             if not window.bottom_hit(mino.pattern, mino.loc):
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.control('down')
@@ -358,22 +351,17 @@ while True:
                 if window.rotate_hit(mino.pattern, mino.loc, mino.state):
                     mino.rotate('right')
                     window.mapping(mino.pattern, mino.loc, 'drop')
-                    break
                 else:
-                    window.mapping(mino.pattern, mino.loc, 'drop', hit)
-                    mino.state[0] -= 1
+                    window.mapping(mino.pattern, mino.loc, mino.state, window.axis)
 
             if event.key == K_x:
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.rotate('right')
-                hit = window.rotate_hit(mino.pattern, mino.loc, mino.state)
-                if hit == True:
+                if window.rotate_hit(mino.pattern, mino.loc, mino.state):
                     mino.rotate('left')
                     window.mapping(mino.pattern, mino.loc, 'drop')
-                    break
                 else:
-                    window.mapping(mino.pattern, mino.loc, 'drop', hit)
-                    mino.state[0] += 1
+                    window.mapping(mino.pattern, mino.loc, mino.state, window.axis)
 
     pygame.display.update()
 
