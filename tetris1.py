@@ -44,7 +44,7 @@ class Mino:
 
     def __init__(self):
         self.pattern = self.create()
-        self.loc = [4, 0] #  [x, y]
+        self.loc = [4, 0] #  ミノの配列の[0][0]の座標 [x, y]
         self.state = [0, 0] # [今の状態, 移行したい状態]
 
     def create(self):
@@ -65,28 +65,23 @@ class Mino:
             return Mino._t
 
     def rotate(self, direct):
-        p_len = len(self.pattern)
-        p_copy = [[0 for col in range(p_len)] for row in range(p_len)]
-
+        pattern_len = len(self.pattern)
+        pattern_copy = [[0 for col in range(pattern_len)] for row in range(pattern_len)]
         if direct == 'left':
-            for y in range(p_len):
-                for x in range(p_len):
-                    p_copy[p_len - 1 - x][y] = self.pattern[y][x]
-
+            for y in range(pattern_len):
+                for x in range(pattern_len):
+                    pattern_copy[pattern_len - 1 - x][y] = self.pattern[y][x]
             self.state[1] -= 1
             self.state[1] %= 4
-
         if direct == 'right':
-            for y in range(p_len):
-                for x in range(p_len):
-                    p_copy[x][p_len - 1 - y] = self.pattern[y][x]
-
+            for y in range(pattern_len):
+                for x in range(pattern_len):
+                    pattern_copy[x][pattern_len - 1 - y] = self.pattern[y][x]
             self.state[1] += 1
             self.state[1] %= 4
-
-        for y in range(p_len):
-            for x in range(p_len):
-                self.pattern[y][x] = p_copy[y][x]
+        for y in range(pattern_len):
+            for x in range(pattern_len):
+                self.pattern[y][x] = pattern_copy[y][x]
 
     def control(self, direct):
         if direct == 'left':
@@ -125,34 +120,49 @@ class Window:
 
     def __init__(self):
         self.load_image()
-        self.axis = []
+        self.shift_loc = [0, 0]
 
-    def mapping(self, pattern, loc, process='drop', axis=[0,0]):
-        loc_x = loc[0] + axis[0]
-        loc_y = loc[1] + axis[1]
-        p_len = len(pattern)
-        end_x = loc_x + p_len
-        end_y = loc_y + p_len
+    def mapping(self, pattern, loc, process):
+#        loc[0] = loc[0] + self.shift_loc[0]
+#        loc[1] = loc[1] + self.shift_loc[1]
+        field_x = loc[0]
+        field_y = loc[1]
+#        field_x = loc[0] + self.shift_loc[0]
+#        field_y = loc[1] + self.shift_loc[1]
+        pattern_len = len(pattern)
+        end_x = field_x + pattern_len
+        end_y = field_y + pattern_len
 
-        if process == 'l_clear':
+        if process == 'line_clear':
             for y in self.lines:
                 del self._field[y]
             for y in self.lines:
                 self._field.insert(2, [99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  99])
             return 0
 
-        for y in range(loc_y, end_y):
-            for x in range(loc_x, end_x):
-                px = x - loc_x
-                py = y - loc_y
-                code = pattern[py][px]
+        for y in range(field_y, end_y):
+            for x in range(field_x, end_x):
+                pattern_x = x - field_x
+                pattern_y = y - field_y
+                code = pattern[pattern_y][pattern_x] #  patternリストの中を左上から横方向に走査
+#                if code:
+#                    if process == 'drop':
+#                        Window._field[y + self.shift_loc[1]][x + self.shift_loc[0]] = code
+#                    elif process == 'clear':
+#                        Window._field[y + self.shift_loc[1]][x + self.shift_loc[0]] = 0
+##                        Window._field[y][x] = 0
+#                    elif process == 'fix':
+#                        Window._field[y + self.shift_loc[1]][x + self.shift_loc[0]] = code + 10
+##                        Window._field[y][x] = code + 10
                 if code:
                     if process == 'drop':
                         Window._field[y][x] = code
                     elif process == 'clear':
                         Window._field[y][x] = 0
+                    #                        Window._field[y][x] = 0
                     elif process == 'fix':
                         Window._field[y][x] = code + 10
+                    #                        Window._field[y][x] = code + 10
 
     def draw(self, screen):
         screen.fill((0, 0, 0))
@@ -188,78 +198,91 @@ class Window:
         self.block_img[7] = pygame.image.load('data/w.bmp')
 
     def left_hit(self, pattern, loc):
-        p_len = len(pattern)
-        for x in range(p_len):
-            for y in range(p_len):
+        pattern_len = len(pattern)
+        for x in range(pattern_len):
+            for y in range(pattern_len):
                 if pattern[y][x]:
-                    fx = loc[0] + x
-                    fy = loc[1] + y
-                    if self._field[fy][fx - 1] > 10:
+                    field_x = loc[0] + x
+                    field_y = loc[1] + y
+                    if self._field[field_y][field_x - 1] > 10:
                         return True
         return False
 
     def right_hit(self, pattern, loc):
-        p_len = len(pattern)
-        for x in range(p_len - 1, -1, -1):
-            for y in range(p_len):
+        pattern_len = len(pattern)
+        for x in range(pattern_len - 1, -1, -1):
+            for y in range(pattern_len):
                 if pattern[y][x]:
-                    fx = loc[0] + x
-                    fy = loc[1] + y
-                    if self._field[fy][fx + 1] > 10:
+                    field_x = loc[0] + x
+                    field_y = loc[1] + y
+                    if self._field[field_y][field_x + 1] > 10:
                         return True
         return False
 
     def bottom_hit(self, pattern, loc):
-        p_len = len(pattern)
-        for y in range(p_len - 1, -1, -1):
-            for x in range(p_len):
+        pattern_len = len(pattern)
+        for y in range(pattern_len - 1, -1, -1):
+            for x in range(pattern_len):
                 if pattern[y][x]:
-                    fx = loc[0] + x
-                    fy = loc[1] + y
-                    if self._field[fy + 1][fx] > 10:
+                    field_x = loc[0] + x
+                    field_y = loc[1] + y
+                    if self._field[field_y + 1][field_x] > 10:
                         return True
         return False
 
-    def rotate_hit(self, pattern, loc, state):
-        p_len = len(pattern)
-        test_list = []
-        collision_flag = False
+#    def rotate_hit(self, pattern, loc, state):
+    def rotate_hit(self, mino):
+        if mino.state == [0, 1]:
+            shift_list = [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]]
+        if mino.state == [1, 2]:
+            shift_list = [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]]
+        if mino.state == [2, 3]:
+            shift_list = [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]]
+        if mino.state == [3, 0]:
+            shift_list = [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]]
+        if mino.state == [0, 3]:
+            shift_list = [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]]
+        if mino.state == [3, 2]:
+            shift_list = [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]]
+        if mino.state == [2, 1]:
+            shift_list = [[0, 0], [-1, -1], [-1, -1], [0, 2], [-1, 2]]
+        if mino.state == [1, 0]:
+            shift_list = [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]]
 
-        if state == [0, 1]:
-            test_list = [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]]
-        if state == [1, 2]:
-            test_list = [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]]
-        if state == [2, 3]:
-            test_list = [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]]
-        if state == [3, 0]:
-            test_list = [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]]
-        if state == [0, 3]:
-            test_list = [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]]
-        if state == [3, 2]:
-            test_list = [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]]
-        if state == [2, 1]:
-            test_list = [[0, 0], [-1, -1], [-1, -1], [0, 2], [-1, 2]]
-        if state == [1, 0]:
-            test_list = [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]]
+        pattern_len = len(mino.pattern)
+        collision_list = []
 
-        for shift_axis in test_list:
-            for y in range(p_len):
-                for x in range(p_len):
-                    if pattern[y][x]:
-                        fx = loc[0] + x + shift_axis[0]
-                        fy = loc[1] + y + shift_axis[1]
-                        if self._field[fy][fx] > 10:
-                            collision_flag = True
-                            break
-                if collision_flag:
-                    break
-            if collision_flag:
-                continue
-            else:
-                self.axis = shift_axis
-                state[0] = state[1]
+        for shift_axis in shift_list:
+            for y in range(pattern_len):
+                for x in range(pattern_len):
+                    if mino.pattern[y][x]:
+                        field_x = mino.loc[0] + x + shift_axis[0]
+                        field_y = mino.loc[1] + y + shift_axis[1]
+                        if self._field[field_y][field_x] > 10:
+                            collision_list.append(99)
+                        else:
+                            collision_list.append(0)
+            if not 99 in collision_list:
+                self.shift_loc = shift_axis
+                mino.loc[0] += shift_axis[0]
+                mino.loc[1] += shift_axis[1]
+                mino.state[0] = mino.state[1]
                 return False
+            collision_list = []
         return True
+
+#            collision_list = []
+#                            break
+#                if collision_flag:
+#                    break
+        if 99 in collision_list:
+            return True
+        else:
+            self.shift_loc = shift_axis
+            state[0] = state[1]
+            return False
+
+
 #        self.axis = axis
 #        state[0] = state[1]
 #            return False
@@ -307,7 +330,7 @@ while True:
 
     if pressed[K_LEFT]:
         l_cnt += 1
-        if l_cnt ==100:
+        if l_cnt == 3:
             if not window.left_hit(mino.pattern, mino.loc):
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.control('left')
@@ -316,7 +339,7 @@ while True:
 
     if pressed[K_RIGHT]:
         r_cnt += 1
-        if r_cnt == 100:
+        if r_cnt == 3:
             if not window.right_hit(mino.pattern, mino.loc):
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.control('right')
@@ -325,7 +348,7 @@ while True:
 
     if pressed[K_DOWN]:
         d_cnt += 1
-        if d_cnt == 100:
+        if d_cnt == 3:
             if not window.bottom_hit(mino.pattern, mino.loc):
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.control('down')
@@ -333,7 +356,7 @@ while True:
             else:
                 window.mapping(mino.pattern, mino.loc, 'fix')
                 window.line_check()
-                window.mapping(mino.pattern, mino.loc, 'l_clear')
+                window.mapping(mino.pattern, mino.loc, 'line_clear')
                 fixed = True
             d_cnt = 0
 
@@ -342,7 +365,7 @@ while True:
             if window.bottom_hit(mino.pattern, mino.loc):
                 window.mapping(mino.pattern, mino.loc, 'fix')
                 window.line_check()
-                window.mapping(mino.pattern, mino.loc, 'l_clear')
+                window.mapping(mino.pattern, mino.loc, 'line_clear')
                 fixed = True
                 mino = Mino()
             else:
@@ -356,20 +379,22 @@ while True:
             if event.key == K_z:
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.rotate('left')
-                if window.rotate_hit(mino.pattern, mino.loc, mino.state):
+#                if window.rotate_hit(mino.pattern, mino.loc, mino.state):
+                if window.rotate_hit(mino):
                     mino.rotate('right')
                     window.mapping(mino.pattern, mino.loc, 'drop')
                 else:
-                    window.mapping(mino.pattern, mino.loc, mino.state, window.axis)
+                    window.mapping(mino.pattern, mino.loc, 'drop')
 
             if event.key == K_x:
                 window.mapping(mino.pattern, mino.loc, 'clear')
                 mino.rotate('right')
-                if window.rotate_hit(mino.pattern, mino.loc, mino.state):
+#                if window.rotate_hit(mino.pattern, mino.loc, mino.state):
+                if window.rotate_hit(mino):
                     mino.rotate('left')
                     window.mapping(mino.pattern, mino.loc, 'drop')
                 else:
-                    window.mapping(mino.pattern, mino.loc, mino.state, window.axis)
+                    window.mapping(mino.pattern, mino.loc, 'drop')
 
     window.draw(screen)
     pygame.display.update()
