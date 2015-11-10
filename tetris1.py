@@ -247,14 +247,18 @@ class Window:
                     if pattern[y][x]:
                         fx = loc[0] + x + axis[0]
                         fy = loc[1] + y + axis[1]
-                        if self._field[fy][fx] < 10:
+                        if self._field[fy][fx] > 10:
                             break
-                        else:
-                            break
-                continue
-        self.axis = axis
-        state[0] = state[1]
-            return False
+                else:
+                    continue
+                break
+            else:
+                self.axis = axis
+            continue
+        return True
+#        self.axis = axis
+#        state[0] = state[1]
+#            return False
 #            self.mapping(pattern, loc, 'drop', axis)
 #            break
 
