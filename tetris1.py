@@ -7,136 +7,89 @@ from pygame.locals import *
 
 
 class Mino:
-    # クラス変数（文頭のアンダースコアで外部から参照不可）
-#    _i = [
-#        [0, 0, 0, 0],
-#        [1, 1, 1, 1],
-#        [0, 0, 0, 0],
-#        [0, 0, 0, 0],]
-#
-#    _o = [
-#        [2, 2],
-#        [2, 2],]
-#
-#    _s = [
-#        [0, 3, 3],
-#        [3, 3, 0],
-#        [0, 0, 0],]
-#
-#    _z = [
-#        [4, 4, 0],
-#        [0, 4, 4],
-#        [0, 0, 0],]
-#
-#    _j = [
-#        [5, 0, 0],
-#        [5, 5, 5],
-#        [0, 0, 0],]
-#
-#    _l = [
-#        [0, 0, 6],
-#        [6, 6, 6],
-#        [0, 0, 0],]
-#
-#    _t = [
-#        [0, 7, 0],
-#        [7, 7, 7],
-#        [0, 0, 0],]
-    queue = Queue(7)
+    queue = Queue(8)
+    hold_index = 0
+    hold_mino = []
 
-    def __init__(self):
-        if Mino.queue.empty():
-            self.create()
-        self.pattern = Mino.queue.get()
-        self.loc = [6, 0] #  mino配列のfield配列内での位置を表す[x, y]
-        self.state = [0, 0] # [今の状態, 移行したい状態]
+    def __init__(self, process):
+        if process == 'drop':
+            if Mino.queue.empty():
+                self.create('drop')
+            self.pattern = Mino.queue.get()
+            self.loc = [6, 0] #  mino配列のfield配列内での位置を表す[x, y]
+            self.state = [0, 0] # [今の状態, 移行したい状態]
+        elif process == 'hold':
+            self.create('hold')
+            self.pattern = Mino.hold_mino
+            self.loc = [6, 0] #  mino配列のfield配列内での位置を表す[x, y]
+            self.state = [0, 0] # [今の状態, 移行したい状態]
 
-#    def create(self):
-#        self.index = randint(1, 7)
-#        if self.index == 1:
-#            return Mino._i
-#        if self.index == 2:
-#            return Mino._o
-#        if self.index == 3:
-#            return Mino._s
-#        if self.index == 4:
-#            return Mino._z
-#        if self.index == 5:
-#            return Mino._j
-#        if self.index == 6:
-#            return Mino._l
-#        if self.index == 7:
-#            return Mino._t
+    def create(self, process):
+        if process == 'drop':
+            index_list = [1, 2, 3, 4, 5, 6, 7]
+            random.shuffle(index_list)
+            for i in index_list:
+                if i == 1: # I
+                    mino_pattern = ([[0, 0, 0, 0],
+                                     [1, 1, 1, 1],
+                                     [0, 0, 0, 0],
+                                     [0, 0, 0, 0],])
+                if i == 2: # O
+                    mino_pattern = ([[2, 2],
+                                     [2, 2],])
+                if i == 3: # S
+                    mino_pattern = ([[0, 3, 3],
+                                     [3, 3, 0],
+                                     [0, 0, 0],])
+                if i == 4: # Z
+                    mino_pattern = ([[4, 4, 0],
+                                     [0, 4, 4],
+                                     [0, 0, 0],])
+                if i == 5: # J
+                    mino_pattern = ([[5, 0, 0],
+                                     [5, 5, 5],
+                                     [0, 0, 0],])
+                if i == 6: # L
+                    mino_pattern = ([[0, 0, 6],
+                                     [6, 6, 6],
+                                     [0, 0, 0],])
+                if i == 7: # T
+                    mino_pattern = ([[0, 7, 0],
+                                     [7, 7, 7],
+                                     [0, 0, 0],])
+            Mino.queue._put(mino_pattern)
 
-    def create(self):
-#        self.queue = Queue(7)
-        index_list = [1, 2, 3, 4, 5, 6, 7]
-#        index = randint(1, 7)
-        random.shuffle(index_list)
-        for i in index_list:
+        if process == 'hold':
+            i = Mino.hold_index
             if i == 1: # I
-                Mino.queue._put([[0, 0, 0, 0],
-                                  [1, 1, 1, 1],
-                                  [0, 0, 0, 0],
-                                  [0, 0, 0, 0],])
+                mino_pattern = ([[0, 0, 0, 0],
+                                 [1, 1, 1, 1],
+                                 [0, 0, 0, 0],
+                                 [0, 0, 0, 0],])
             if i == 2: # O
-                Mino.queue._put([[2, 2],
-                                  [2, 2],])
+                mino_pattern = ([[2, 2],
+                                 [2, 2],])
             if i == 3: # S
-                Mino.queue._put([[0, 3, 3],
-                                  [3, 3, 0],
-                                  [0, 0, 0],])
+                mino_pattern = ([[0, 3, 3],
+                                 [3, 3, 0],
+                                 [0, 0, 0],])
             if i == 4: # Z
-                Mino.queue._put([[4, 4, 0],
-                                  [0, 4, 4],
-                                  [0, 0, 0],])
+                mino_pattern = ([[4, 4, 0],
+                                 [0, 4, 4],
+                                 [0, 0, 0],])
             if i == 5: # J
-                Mino.queue._put([[5, 0, 0],
-                                  [5, 5, 5],
-                                  [0, 0, 0],])
+                mino_pattern = ([[5, 0, 0],
+                                 [5, 5, 5],
+                                 [0, 0, 0],])
             if i == 6: # L
-                Mino.queue._put([[0, 0, 6],
-                                  [6, 6, 6],
-                                  [0, 0, 0],])
+                mino_pattern = ([[0, 0, 6],
+                                 [6, 6, 6],
+                                 [0, 0, 0],])
             if i == 7: # T
-                Mino.queue._put([[0, 7, 0],
-                                  [7, 7, 7],
-                                  [0, 0, 0],])
-
-#    def pickup_pattern(self):
-#        if self.queue.empty():
-#            self.create()
-#        else:
-#            self.pattern = self.queue.get()
-#            if self.index == 2: # O
-#                return [
-#                    [2, 2],
-#                    [2, 2],]
-#            if self.index == 3: # S
-#                return [
-#                    [0, 3, 3],
-#                    [3, 3, 0],
-#                    [0, 0, 0],]
-#            if self.index == 4: # Z
-#                return [
-#                    [4, 4, 0],
-#                    [0, 4, 4],
-#                    [0, 0, 0],]
-#            if self.index == 5: # J
-#                return [
-#                    [5, 0, 0],
-#                    [5, 5, 5],
-#                    [0, 0, 0],]
-#            if self.index == 6: # L
-#                return [
-#                    [0, 0, 6],
-#                    [6, 6, 6],
-#                    [0, 0, 0],]
-#            if self.index == 7: # T
-#                return [
-#                    [0, 7, 0],
-#                    [7, 7, 7],
-#                    [0, 0, 0],]
+                mino_pattern = ([[0, 7, 0],
+                                 [7, 7, 7],
+                                 [0, 0, 0],])
+            Mino.hold_mino = mino_pattern
 
 
     def rotate(self, direct):
@@ -165,6 +118,43 @@ class Mino:
             self.loc[0] += 1
         if direct == 'down':
             self.loc[1] += 1
+
+    def hold(self):
+        for code in self.pattern:
+            if code != 0:
+#                Mino.hold = code
+                temp_code = code
+                break
+        if Mino.hold_index != 0:
+            Mino.hold_index = temp_code
+            return True
+        else:
+            Mino('hold')
+            Mino.hold_index = temp_code
+            return False
+        if self.i == 2: # O
+            Mino.hold = ([[2, 2],
+                             [2, 2],])
+        if self.i == 3: # S
+            Mino.hold = ([[0, 3, 3],
+                             [3, 3, 0],
+                             [0, 0, 0],])
+        if self.i == 4: # Z
+            Mino.hold = ([[4, 4, 0],
+                             [0, 4, 4],
+                             [0, 0, 0],])
+        if self.i == 5: # J
+            Mino.hold = ([[5, 0, 0],
+                             [5, 5, 5],
+                             [0, 0, 0],])
+        if self.i == 6: # L
+            Mino.hold = ([[0, 0, 6],
+                             [6, 6, 6],
+                             [0, 0, 0],])
+        if self.i == 7: # T
+            Mino.hold = ([[0, 7, 0],
+                             [7, 7, 7],
+                             [0, 0, 0],])
 
 
 class Window:
@@ -384,7 +374,7 @@ screen_size = (600, 600)
 screen = pygame.display.set_mode(screen_size)
 
 # インスタンス生成
-mino = Mino()
+mino = Mino('drop')
 #mino.create()
 window = Window()
 window.mapping(mino, 'drop')
@@ -400,7 +390,7 @@ pygame.time.set_timer(TIMEREVENT, 500)
 
 while True:
     if fixed:
-        mino = Mino()
+        mino = Mino('drop')
         window.mapping(mino, 'drop')
         fixed = False
     window.draw(screen)
@@ -478,9 +468,15 @@ while True:
                     window.mapping(mino, 'drop')
             if event.key == K_LSHIFT:
                 window.mapping(mino, 'clear')
-                mino.control('hold')
+                if mino.hold():
+#                    mino = None
+                    mino = Mino('hold')
+                else:
+                    pass
+#                    mino = None
+#                    mino =Mino('drop')
                 window.mapping(mino, 'drop')
-                pass
+        #        mino = None
 
     window.draw(screen)
     pygame.display.update()
