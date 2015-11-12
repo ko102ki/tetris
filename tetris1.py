@@ -8,18 +8,19 @@ from pygame.locals import *
 
 class Mino:
     queue = Queue(8)
-    hold_index = 0
+    now_holding = 0
+    create_hold = 0
     hold_mino = []
 
     def __init__(self, process):
         if process == 'drop':
             if Mino.queue.empty():
-                self.create('drop')
+                self.create(process)
             self.pattern = Mino.queue.get()
             self.loc = [6, 0] #  mino配列のfield配列内での位置を表す[x, y]
             self.state = [0, 0] # [今の状態, 移行したい状態]
         elif process == 'hold':
-            self.create('hold')
+            self.create(process)
             self.pattern = Mino.hold_mino
             self.loc = [6, 0] #  mino配列のfield配列内での位置を表す[x, y]
             self.state = [0, 0] # [今の状態, 移行したい状態]
@@ -57,10 +58,10 @@ class Mino:
                     mino_pattern = ([[0, 7, 0],
                                      [7, 7, 7],
                                      [0, 0, 0],])
-            Mino.queue._put(mino_pattern)
+                Mino.queue._put(mino_pattern)
 
         if process == 'hold':
-            i = Mino.hold_index
+            i = Mino.create_hold
             if i == 1: # I
                 mino_pattern = ([[0, 0, 0, 0],
                                  [1, 1, 1, 1],
@@ -119,42 +120,42 @@ class Mino:
         if direct == 'down':
             self.loc[1] += 1
 
-    def hold(self):
-        for code in self.pattern:
-            if code != 0:
-#                Mino.hold = code
-                temp_code = code
-                break
-        if Mino.hold_index != 0:
-            Mino.hold_index = temp_code
-            return True
-        else:
-            Mino('hold')
-            Mino.hold_index = temp_code
+    def holded(self):
+        for y in self.pattern:
+            for x in y:
+                if x != 0:
+                    mino_index = x
+                    break
+        if Mino.now_holding == 0:
+            Mino.now_holding = mino_index
             return False
-        if self.i == 2: # O
-            Mino.hold = ([[2, 2],
-                             [2, 2],])
-        if self.i == 3: # S
-            Mino.hold = ([[0, 3, 3],
-                             [3, 3, 0],
-                             [0, 0, 0],])
-        if self.i == 4: # Z
-            Mino.hold = ([[4, 4, 0],
-                             [0, 4, 4],
-                             [0, 0, 0],])
-        if self.i == 5: # J
-            Mino.hold = ([[5, 0, 0],
-                             [5, 5, 5],
-                             [0, 0, 0],])
-        if self.i == 6: # L
-            Mino.hold = ([[0, 0, 6],
-                             [6, 6, 6],
-                             [0, 0, 0],])
-        if self.i == 7: # T
-            Mino.hold = ([[0, 7, 0],
-                             [7, 7, 7],
-                             [0, 0, 0],])
+        else:
+            Mino.create_hold = Mino.now_holding
+            Mino.now_holding = mino_index
+            return True
+#        if self.i == 2: # O
+#            Mino.hold = ([[2, 2],
+#                             [2, 2],])
+#        if self.i == 3: # S
+#            Mino.hold = ([[0, 3, 3],
+#                             [3, 3, 0],
+#                             [0, 0, 0],])
+#        if self.i == 4: # Z
+#            Mino.hold = ([[4, 4, 0],
+#                             [0, 4, 4],
+#                             [0, 0, 0],])
+#        if self.i == 5: # J
+#            Mino.hold = ([[5, 0, 0],
+#                             [5, 5, 5],
+#                             [0, 0, 0],])
+#        if self.i == 6: # L
+#            Mino.hold = ([[0, 0, 6],
+#                             [6, 6, 6],
+#                             [0, 0, 0],])
+#        if self.i == 7: # T
+#            Mino.hold = ([[0, 7, 0],
+#                             [7, 7, 7],
+#                             [0, 0, 0],])
 
 
 class Window:
@@ -247,6 +248,26 @@ class Window:
                     screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
                 elif code == 7 or code == 17:
                     screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
+        code = Mino.now_holding
+        x = 1
+        y = 1
+        if code == 0:
+            pass
+#                screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
+        elif code == 1 or code == 11:
+            screen.blit(self.block_img[0], (x * block_size, y * block_size))
+        elif code == 2 or code == 12:
+            screen.blit(self.block_img[1], (x * block_size, y * block_size))
+        elif code == 3 or code == 13:
+            screen.blit(self.block_img[2], (x * block_size, y * block_size))
+        elif code == 4 or code == 14:
+            screen.blit(self.block_img[3], (x * block_size, y * block_size))
+        elif code == 5 or code == 15:
+            screen.blit(self.block_img[4], (x * block_size, y * block_size))
+        elif code == 6 or code == 16:
+            screen.blit(self.block_img[5], (x * block_size, y * block_size))
+        elif code == 7 or code == 17:
+            screen.blit(self.block_img[6], (x * block_size, y * block_size))
 
     def load_image(self):
         self.block_img = [[], [], [], [], [], [], [], []]
@@ -468,11 +489,12 @@ while True:
                     window.mapping(mino, 'drop')
             if event.key == K_LSHIFT:
                 window.mapping(mino, 'clear')
-                if mino.hold():
-#                    mino = None
+                if mino.holded():
+                    mino = None
                     mino = Mino('hold')
                 else:
-                    pass
+                    mino = None
+                    mino = Mino('drop')
 #                    mino = None
 #                    mino =Mino('drop')
                 window.mapping(mino, 'drop')
