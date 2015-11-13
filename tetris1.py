@@ -1,4 +1,4 @@
-#from random import randint
+# from random import randint
 import random
 import pygame
 import sys
@@ -17,81 +17,81 @@ class Mino:
             if Mino.queue.empty():
                 self.create(process)
             self.pattern = Mino.queue.get()
-            self.loc = [6, 0] #  mino配列のfield配列内での位置を表す[x, y]
-            self.state = [0, 0] # [今の状態, 移行したい状態]
+            self.loc = [6, 0]  # mino配列のfield配列内での位置を表す[x, y]
+            self.state = [0, 0]  # [今の状態, 移行したい状態]
         elif process == 'hold':
             self.create(process)
             self.pattern = Mino.hold_mino
-            self.loc = [6, 0] #  mino配列のfield配列内での位置を表す[x, y]
-            self.state = [0, 0] # [今の状態, 移行したい状態]
+            self.loc = [6, 0]  # mino配列のfield配列内での位置を表す[x, y]
+            self.state = [0, 0]  # [今の状態, 移行したい状態]
+        self.ghost_loc = [0, 0]
 
     def create(self, process):
         if process == 'drop':
             index_list = [1, 2, 3, 4, 5, 6, 7]
             random.shuffle(index_list)
             for i in index_list:
-                if i == 1: # I
+                if i == 1:  # I
                     mino_pattern = ([[0, 0, 0, 0],
                                      [1, 1, 1, 1],
                                      [0, 0, 0, 0],
-                                     [0, 0, 0, 0],])
-                if i == 2: # O
+                                     [0, 0, 0, 0], ])
+                if i == 2:  # O
                     mino_pattern = ([[2, 2],
-                                     [2, 2],])
-                if i == 3: # S
+                                     [2, 2], ])
+                if i == 3:  # S
                     mino_pattern = ([[0, 3, 3],
                                      [3, 3, 0],
-                                     [0, 0, 0],])
-                if i == 4: # Z
+                                     [0, 0, 0], ])
+                if i == 4:  # Z
                     mino_pattern = ([[4, 4, 0],
                                      [0, 4, 4],
-                                     [0, 0, 0],])
-                if i == 5: # J
+                                     [0, 0, 0], ])
+                if i == 5:  # J
                     mino_pattern = ([[5, 0, 0],
                                      [5, 5, 5],
-                                     [0, 0, 0],])
-                if i == 6: # L
+                                     [0, 0, 0], ])
+                if i == 6:  # L
                     mino_pattern = ([[0, 0, 6],
                                      [6, 6, 6],
-                                     [0, 0, 0],])
-                if i == 7: # T
+                                     [0, 0, 0], ])
+                if i == 7:  # T
                     mino_pattern = ([[0, 7, 0],
                                      [7, 7, 7],
-                                     [0, 0, 0],])
+                                     [0, 0, 0], ])
                 Mino.queue._put(mino_pattern)
 
         if process == 'hold':
             i = Mino.create_hold
-            if i == 1: # I
+            if i == 1:  # I
                 mino_pattern = ([[0, 0, 0, 0],
                                  [1, 1, 1, 1],
                                  [0, 0, 0, 0],
-                                 [0, 0, 0, 0],])
-            if i == 2: # O
+                                 [0, 0, 0, 0], ])
+            if i == 2:  # O
                 mino_pattern = ([[2, 2],
-                                 [2, 2],])
-            if i == 3: # S
+                                 [2, 2], ])
+            if i == 3:  # S
                 mino_pattern = ([[0, 3, 3],
                                  [3, 3, 0],
-                                 [0, 0, 0],])
-            if i == 4: # Z
+                                 [0, 0, 0], ])
+            if i == 4:  # Z
                 mino_pattern = ([[4, 4, 0],
                                  [0, 4, 4],
-                                 [0, 0, 0],])
-            if i == 5: # J
+                                 [0, 0, 0], ])
+            if i == 5:  # J
                 mino_pattern = ([[5, 0, 0],
                                  [5, 5, 5],
-                                 [0, 0, 0],])
-            if i == 6: # L
+                                 [0, 0, 0], ])
+            if i == 6:  # L
                 mino_pattern = ([[0, 0, 6],
                                  [6, 6, 6],
-                                 [0, 0, 0],])
-            if i == 7: # T
+                                 [0, 0, 0], ])
+            if i == 7:  # T
                 mino_pattern = ([[0, 7, 0],
                                  [7, 7, 7],
-                                 [0, 0, 0],])
+                                 [0, 0, 0], ])
             Mino.hold_mino = mino_pattern
-
 
     def rotate(self, direct):
         pattern_len = len(self.pattern)
@@ -133,73 +133,46 @@ class Mino:
             Mino.create_hold = Mino.now_holding
             Mino.now_holding = mino_index
             return True
-#        if self.i == 2: # O
-#            Mino.hold = ([[2, 2],
-#                             [2, 2],])
-#        if self.i == 3: # S
-#            Mino.hold = ([[0, 3, 3],
-#                             [3, 3, 0],
-#                             [0, 0, 0],])
-#        if self.i == 4: # Z
-#            Mino.hold = ([[4, 4, 0],
-#                             [0, 4, 4],
-#                             [0, 0, 0],])
-#        if self.i == 5: # J
-#            Mino.hold = ([[5, 0, 0],
-#                             [5, 5, 5],
-#                             [0, 0, 0],])
-#        if self.i == 6: # L
-#            Mino.hold = ([[0, 0, 6],
-#                             [6, 6, 6],
-#                             [0, 0, 0],])
-#        if self.i == 7: # T
-#            Mino.hold = ([[0, 7, 0],
-#                             [7, 7, 7],
-#                             [0, 0, 0],])
 
 
 class Window:
-    _field =[
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
-            [99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99],
-            [99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99],
-            [99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99],]
+    _field = [
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
+        [99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99],
+        [99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99],
+        [99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99], ]
 
     _field_height = 25
     _field_width = 16
 
     def __init__(self):
         self.load_image()
-        self.shift_loc = [0, 0] # 壁蹴り時のシフト幅[x, y]
+        self.shift_loc = [0, 0]  # 壁蹴り時のシフト幅[x, y]
 
     def mapping(self, mino, process):
-#        loc[0] = loc[0] + self.shift_loc[0]
-#        loc[1] = loc[1] + self.shift_loc[1]
         field_x = mino.loc[0]
         field_y = mino.loc[1]
-#        field_x = loc[0] + self.shift_loc[0]
-#        field_y = loc[1] + self.shift_loc[1]
         pattern_len = len(mino.pattern)
         end_x = field_x + pattern_len
         end_y = field_y + pattern_len
@@ -208,14 +181,14 @@ class Window:
             for y in self.lines:
                 del Window._field[y]
             for y in self.lines:
-                Window._field.insert(2, [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99])
+                Window._field.insert(2, [99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 99])
             return 0
 
         for y in range(field_y, end_y):
             for x in range(field_x, end_x):
                 pattern_x = x - field_x
                 pattern_y = y - field_y
-                code = mino.pattern[pattern_y][pattern_x] #  patternリストの中を左上から右に向かって走査
+                code = mino.pattern[pattern_y][pattern_x]  # patternリストの中を左上から右に向かって走査
                 if code:
                     if process == 'drop':
                         Window._field[y][x] = code
@@ -224,36 +197,52 @@ class Window:
                     elif process == 'fix':
                         Window._field[y][x] = code + 10
 
+        if process == 'ghost':
+            field_x = mino.ghost_loc[0] - pattern_len + 1
+            field_y = mino.ghost_loc[1] - pattern_len + 2
+            print('x, y', field_x, field_y)
+            pattern_len = len(mino.pattern)
+            end_x = field_x + pattern_len
+            end_y = field_y + pattern_len
+            for y in range(field_y, end_y):
+                for x in range(field_x, end_x):
+                    pattern_x = x - field_x
+                    pattern_y = y - field_y
+                    code = mino.pattern[pattern_y][pattern_x]  # patternリストの中を左上から右に向かって走査
+                    if code:
+                        Window._field[y][x] = code * -1
+
     def draw(self, screen):
         block_size = 24
         left_margin = 72
         bottom_margin = 24
         screen.fill((0, 0, 0))
-        for y in range(2, Window._field_height-2):
-            for x in range(2, Window._field_width-2):
+        for y in range(2, Window._field_height - 2):
+            for x in range(2, Window._field_width - 2):
                 code = Window._field[y][x]
                 if code == 99:
                     screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 1 or code == 11:
+                elif code == 1 or code == 11 or code == -1:
                     screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 2 or code == 12:
+                elif code == 2 or code == 12 or code == -2:
                     screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 3 or code == 13:
+                elif code == 3 or code == 13 or code == -3:
                     screen.blit(self.block_img[2], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 4 or code == 14:
+                elif code == 4 or code == 14 or code == -4:
                     screen.blit(self.block_img[3], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 5 or code == 15:
+                elif code == 5 or code == 15 or code == -5:
                     screen.blit(self.block_img[4], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 6 or code == 16:
+                elif code == 6 or code == 16 or code == -6:
                     screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 7 or code == 17:
+                elif code == 7 or code == 17 or code == -7:
                     screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
         code = Mino.now_holding
+        next_mino = Mino.queue[0]
         x = 1
         y = 1
         if code == 0:
             pass
-#                screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
+        # screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
         elif code == 1 or code == 11:
             screen.blit(self.block_img[0], (x * block_size, y * block_size))
         elif code == 2 or code == 12:
@@ -268,6 +257,8 @@ class Window:
             screen.blit(self.block_img[5], (x * block_size, y * block_size))
         elif code == 7 or code == 17:
             screen.blit(self.block_img[6], (x * block_size, y * block_size))
+
+
 
     def load_image(self):
         self.block_img = [[], [], [], [], [], [], [], []]
@@ -302,25 +293,55 @@ class Window:
                         return True
         return False
 
-    def bottom_hit(self, mino):
+    def bottom_hit(self, mino, process):
         pattern_len = len(mino.pattern)
-        for y in range(pattern_len - 1, -1, -1):
-            for x in range(pattern_len):
-                if mino.pattern[y][x]:
-                    field_x = mino.loc[0] + x
-                    field_y = mino.loc[1] + y
-                    if Window._field[field_y + 1][field_x] > 10:
-                        return True
-        return False
 
-#    def rotate_hit(self, pattern, loc, state):
+#        for y in range(pattern_len - 1, -1, -1):
+#            for x in range(pattern_len):
+#                if mino.pattern[y][x]:
+#                    field_x = mino.loc[0] + x
+#                    field_y = mino.loc[1] + y
+#                    if Window._field[field_y + 1][field_x] > 10:
+#                        return True
+#        return False
+
+        if process == 'drop':
+            for y in range(pattern_len - 1, -1, -1):
+                for x in range(pattern_len):
+                    if mino.pattern[y][x]:
+                        field_x = mino.loc[0] + x
+                        field_y = mino.loc[1] + y
+                        if Window._field[field_y + 1][field_x] > 10:
+                            return True
+            return False
+
+        elif process == 'ghost':
+            loc_x = mino.loc[0]
+            loc_y = mino.loc[1]
+            ghost_flag = True
+            while ghost_flag:
+                for y in range(pattern_len - 1, -1, -1):
+                    for x in range(pattern_len):
+                        if mino.pattern[y][x]:
+                            field_x = loc_x + x
+                            field_y = loc_y + y
+                            if Window._field[field_y + 1][field_x] > 10:
+                                ghost_flag = False
+                                mino.ghost_loc[0] = field_x
+                                mino.ghost_loc[1] = field_y
+                loc_y += 1
+
+
+
+
+    #    def rotate_hit(self, pattern, loc, state):
     def rotate_hit(self, mino):
         pattern_len = len(mino.pattern)
         collision_list = []
         shift_list = []
 
-        if pattern_len == 4: # Iミノ用
-            #右回転
+        if pattern_len == 4:  # Iミノ用
+            # 右回転
             if mino.state == [0, 1]:
                 shift_list = [[0, 0], [-2, 0], [1, 0], [-2, 1], [1, -2]]
             if mino.state == [1, 2]:
@@ -329,7 +350,7 @@ class Window:
                 shift_list = [[0, 0], [2, 0], [-1, 0], [2, -1], [-1, 2]]
             if mino.state == [3, 0]:
                 shift_list = [[0, 0], [1, 0], [-2, 0], [1, 2], [-2, -1]]
-            #左回転
+            # 左回転
             if mino.state == [0, 3]:
                 shift_list = [[0, 0], [-1, 0], [2, 0], [-1, -2], [2, 1]]
             if mino.state == [3, 2]:
@@ -338,8 +359,8 @@ class Window:
                 shift_list = [[0, 0], [1, 0], [-2, 0], [1, 2], [-2, -1]]
             if mino.state == [1, 0]:
                 shift_list = [[0, 0], [2, 0], [-1, 0], [2, -1], [-1, 2]]
-        else: # I，O以外のミノ用
-            #右回転
+        else:  # I，O以外のミノ用
+            # 右回転
             if mino.state == [0, 1]:
                 shift_list = [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]]
             if mino.state == [1, 2]:
@@ -348,7 +369,7 @@ class Window:
                 shift_list = [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]]
             if mino.state == [3, 0]:
                 shift_list = [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]]
-            #左回転
+            # 左回転
             if mino.state == [0, 3]:
                 shift_list = [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]]
             if mino.state == [3, 2]:
@@ -369,15 +390,13 @@ class Window:
                         else:
                             collision_list.append(0)
             if not 99 in collision_list:
-#                self.shift_loc = shift_axis
+                #                self.shift_loc = shift_axis
                 mino.loc[0] += shift_axis[0]
                 mino.loc[1] += shift_axis[1]
                 mino.state[0] = mino.state[1]
                 return False
             collision_list = []
         return True
-
-
 
     def line_check(self):
         self.lines = []
@@ -388,18 +407,36 @@ class Window:
             if zero_cnt == 10:
                 break
 
+    def hard_drop(self):
+        hard_flag = True
+        while hard_flag:
+            if not window.bottom_hit(mino, 'drop'):
+                window.mapping(mino, 'clear')
+                mino.control('down')
+                window.mapping(mino, 'drop')
+            else:
+                hard_flag = False
+                window.mapping(mino, 'fix')
+                window.line_check()
+                window.mapping(mino, 'line_clear')
+                #                mino = None
+        return True
+
+    def ghost_block(self):
+        window.bottom_hit(mino, 'ghost')
+        window.mapping(mino, 'ghost')
+
 
 pygame.init()
-#screen_size = (384, 600)
 screen_size = (600, 600)
 screen = pygame.display.set_mode(screen_size)
 
 # インスタンス生成
 mino = Mino('drop')
-#mino.create()
 window = Window()
 window.mapping(mino, 'drop')
 fixed = False
+hold = False
 # キー入力用カウンタ
 l_cnt = 0
 r_cnt = 0
@@ -407,7 +444,7 @@ d_cnt = 0
 threshold = 40
 
 TIMEREVENT = pygame.USEREVENT
-pygame.time.set_timer(TIMEREVENT, 500)
+#pygame.time.set_timer(TIMEREVENT, 500)
 
 while True:
     if fixed:
@@ -417,10 +454,10 @@ while True:
     window.draw(screen)
     pygame.display.update()
 
+#    window.ghost_block()
+
     pygame.event.pump()
-
     pressed = pygame.key.get_pressed()
-
     if pressed[K_LEFT]:
         l_cnt += 1
         if l_cnt == threshold:
@@ -442,7 +479,7 @@ while True:
     if pressed[K_DOWN]:
         d_cnt += 1
         if d_cnt == threshold:
-            if not window.bottom_hit(mino):
+            if not window.bottom_hit(mino, 'drop'):
                 window.mapping(mino, 'clear')
                 mino.control('down')
                 window.mapping(mino, 'drop')
@@ -450,18 +487,20 @@ while True:
                 window.mapping(mino, 'fix')
                 window.line_check()
                 window.mapping(mino, 'line_clear')
-#                mino = None
+                #                mino = None
                 fixed = True
+                hold = False
             d_cnt = 0
 
     for event in pygame.event.get():
         if event.type == TIMEREVENT:
-            if window.bottom_hit(mino):
+            if window.bottom_hit(mino, 'drop'):
                 window.mapping(mino, 'fix')
                 window.line_check()
                 window.mapping(mino, 'line_clear')
-#                mino = None
+                #                mino = None
                 fixed = True
+                hold = False
             else:
                 window.mapping(mino, 'clear')
                 mino.control('down')
@@ -487,19 +526,23 @@ while True:
                     window.mapping(mino, 'drop')
                 else:
                     window.mapping(mino, 'drop')
+
             if event.key == K_LSHIFT:
-                window.mapping(mino, 'clear')
-                if mino.holded():
-                    mino = None
-                    mino = Mino('hold')
-                else:
-                    mino = None
-                    mino = Mino('drop')
-#                    mino = None
-#                    mino =Mino('drop')
-                window.mapping(mino, 'drop')
-        #        mino = None
+                if not hold:
+                    window.mapping(mino, 'clear')
+                    if mino.holded():
+                        mino = None
+                        mino = Mino('hold')
+                    else:
+                        mino = None
+                        mino = Mino('drop')
+                    hold = True
+                    window.mapping(mino, 'drop')
+
+            if event.key == K_UP:
+                if window.hard_drop():
+                    fixed = True
+                    hold = False
 
     window.draw(screen)
     pygame.display.update()
-
