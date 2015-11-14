@@ -7,16 +7,22 @@ from pygame.locals import *
 
 
 class Mino:
-    queue = Queue(8)
+#    queue = Queue(8)
+    next1 = []
+    next2 = []
     now_holding = 0
     create_hold = 0
     hold_mino = []
 
     def __init__(self, process):
         if process == 'drop':
-            if Mino.queue.empty():
-                self.create(process)
-            self.pattern = Mino.queue.get()
+#            if Mino.queue.empty():
+            self.create(process)
+#            if len(Mino.next1) < 7:
+#                self.create(process)
+#            self.pattern = Mino.queue.get()
+            self.pattern = Mino.next1.pop(0)
+            Mino.next1.append(Mino.next2.pop(0))
             self.loc = [6, 0]  # mino配列のfield配列内での位置を表す[x, y]
             self.state = [0, 0]  # [今の状態, 移行したい状態]
         elif process == 'hold':
@@ -28,38 +34,15 @@ class Mino:
 
     def create(self, process):
         if process == 'drop':
-            index_list = [1, 2, 3, 4, 5, 6, 7]
-            random.shuffle(index_list)
-            for i in index_list:
-                if i == 1:  # I
-                    mino_pattern = ([[0, 0, 0, 0],
-                                     [1, 1, 1, 1],
-                                     [0, 0, 0, 0],
-                                     [0, 0, 0, 0], ])
-                if i == 2:  # O
-                    mino_pattern = ([[2, 2],
-                                     [2, 2], ])
-                if i == 3:  # S
-                    mino_pattern = ([[0, 3, 3],
-                                     [3, 3, 0],
-                                     [0, 0, 0], ])
-                if i == 4:  # Z
-                    mino_pattern = ([[4, 4, 0],
-                                     [0, 4, 4],
-                                     [0, 0, 0], ])
-                if i == 5:  # J
-                    mino_pattern = ([[5, 0, 0],
-                                     [5, 5, 5],
-                                     [0, 0, 0], ])
-                if i == 6:  # L
-                    mino_pattern = ([[0, 0, 6],
-                                     [6, 6, 6],
-                                     [0, 0, 0], ])
-                if i == 7:  # T
-                    mino_pattern = ([[0, 7, 0],
-                                     [7, 7, 7],
-                                     [0, 0, 0], ])
-                Mino.queue._put(mino_pattern)
+            if len(Mino.next1) == 0:
+                #next1 next2ともに空なので両方にappend
+                self.pattern_create('next1')
+                self.pattern_create('next2')
+            elif len(Mino.next2) == 0:
+                #next2にappend
+                self.pattern_create('next2')
+    #                Mino.queue._put(mino_pattern)
+
 
         if process == 'hold':
             i = Mino.create_hold
@@ -92,6 +75,44 @@ class Mino:
                                  [7, 7, 7],
                                  [0, 0, 0], ])
             Mino.hold_mino = mino_pattern
+
+    def pattern_create(self, list):
+        index_list = [1, 2, 3, 4, 5, 6, 7]
+        random.shuffle(index_list)
+        for i in index_list:
+            if i == 1:  # I
+                mino_pattern = ([[0, 0, 0, 0],
+                                 [1, 1, 1, 1],
+                                 [0, 0, 0, 0],
+                                 [0, 0, 0, 0], ])
+            if i == 2:  # O
+                mino_pattern = ([[2, 2],
+                                 [2, 2], ])
+            if i == 3:  # S
+                mino_pattern = ([[0, 3, 3],
+                                 [3, 3, 0],
+                                 [0, 0, 0], ])
+            if i == 4:  # Z
+                mino_pattern = ([[4, 4, 0],
+                                 [0, 4, 4],
+                                 [0, 0, 0], ])
+            if i == 5:  # J
+                mino_pattern = ([[5, 0, 0],
+                                 [5, 5, 5],
+                                 [0, 0, 0], ])
+            if i == 6:  # 2
+                mino_pattern = ([[0, 0, 6],
+                                 [6, 6, 6],
+                                 [0, 0, 0], ])
+            if i == 7:  # T
+                mino_pattern = ([[0, 7, 0],
+                                 [7, 7, 7],
+                                 [0, 0, 0], ])
+            if list == 'next1':
+                Mino.next1.append(mino_pattern)
+            if list == 'next2':
+                Mino.next2.append(mino_pattern)
+        pass
 
     def rotate(self, direct):
         pattern_len = len(self.pattern)
@@ -236,8 +257,39 @@ class Window:
                     screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
                 elif code == 7 or code == 17 or code == -7:
                     screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
+
+#        code = Mino.next1[0]
+        code = 0
+        draw_flag = True
+        for i in range(7):
+            for j in Mino.next1[i]:
+                for k in j:
+                    if k:
+                        code = k
+                        draw_flag = False
+                        break
+                if draw_flag == False:
+                    break
+            x = 20
+            y = i*2
+            if code == 0:
+                pass
+            elif code == 1 or code == 11:
+                screen.blit(self.block_img[0], (x * block_size, y * block_size))
+            elif code == 2 or code == 12:
+                screen.blit(self.block_img[1], (x * block_size, y * block_size))
+            elif code == 3 or code == 13:
+                screen.blit(self.block_img[2], (x * block_size, y * block_size))
+            elif code == 4 or code == 14:
+                screen.blit(self.block_img[3], (x * block_size, y * block_size))
+            elif code == 5 or code == 15:
+                screen.blit(self.block_img[4], (x * block_size, y * block_size))
+            elif code == 6 or code == 16:
+                screen.blit(self.block_img[5], (x * block_size, y * block_size))
+            elif code == 7 or code == 17:
+                screen.blit(self.block_img[6], (x * block_size, y * block_size))
+
         code = Mino.now_holding
-        next_mino = Mino.queue[0]
         x = 1
         y = 1
         if code == 0:
@@ -246,7 +298,9 @@ class Window:
         elif code == 1 or code == 11:
             screen.blit(self.block_img[0], (x * block_size, y * block_size))
         elif code == 2 or code == 12:
-            screen.blit(self.block_img[1], (x * block_size, y * block_size))
+            hold_img = pygame.transform.scale(self.block_img[1], (20, 20))
+#            screen.blit(self.block_img[1], (x * block_size, y * block_size))
+            screen.blit(hold_img, (x * block_size, y * block_size))
         elif code == 3 or code == 13:
             screen.blit(self.block_img[2], (x * block_size, y * block_size))
         elif code == 4 or code == 14:
@@ -258,6 +312,26 @@ class Window:
         elif code == 7 or code == 17:
             screen.blit(self.block_img[6], (x * block_size, y * block_size))
 
+#        for y in range(len(Mino.hold_mino)):
+#            for x in range(len(Mino.hold_mino)):
+#                code = Mino.hold_mino[y][x]
+#                if code:
+#                    if code == 99:
+#                        screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
+#                    elif code == 1 or code == 11 or code == -1:
+#                        screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
+#                    elif code == 2 or code == 12 or code == -2:
+#                        screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
+#                    elif code == 3 or code == 13 or code == -3:
+#                        screen.blit(self.block_img[2], (left_margin + x * block_size, bottom_margin + y * block_size))
+#                    elif code == 4 or code == 14 or code == -4:
+#                        screen.blit(self.block_img[3], (left_margin + x * block_size, bottom_margin + y * block_size))
+#                    elif code == 5 or code == 15 or code == -5:
+#                        screen.blit(self.block_img[4], (left_margin + x * block_size, bottom_margin + y * block_size))
+#                    elif code == 6 or code == 16 or code == -6:
+#                        screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
+#                    elif code == 7 or code == 17 or code == -7:
+#                        screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
 
 
     def load_image(self):
@@ -444,7 +518,7 @@ d_cnt = 0
 threshold = 40
 
 TIMEREVENT = pygame.USEREVENT
-#pygame.time.set_timer(TIMEREVENT, 500)
+pygame.time.set_timer(TIMEREVENT, 500)
 
 while True:
     if fixed:
