@@ -8,29 +8,23 @@ from pygame.locals import *
 
 class Mino:
 #    queue = Queue(8)
-    next1 = []
-    next2 = []
-    now_holding = 0
-    create_hold = 0
-    hold_mino = []
+    next1 = [] #  ネクストブロック7種を入れる
+    next2 = [] #  ネクストブロック7種を入れる
+
+    hold1 = []
+    hold2 = []
+
+    hold2_type = 0
 
     def __init__(self, process):
+        self.create(process)
         if process == 'drop':
-#            if Mino.queue.empty():
-            self.create(process)
-#            if len(Mino.next1) < 7:
-#                self.create(process)
-#            self.pattern = Mino.queue.get()
             self.pattern = Mino.next1.pop(0)
-            Mino.next1.append(Mino.next2.pop(0))
-            self.loc = [6, 0]  # mino配列のfield配列内での位置を表す[x, y]
-            self.state = [0, 0]  # [今の状態, 移行したい状態]
+            Mino.next1.append(Mino.next2.pop(0)) #  next2からnext1へブロック１つを移す
         elif process == 'hold':
-            self.create(process)
-            self.pattern = Mino.hold_mino
-            self.loc = [6, 0]  # mino配列のfield配列内での位置を表す[x, y]
-            self.state = [0, 0]  # [今の状態, 移行したい状態]
-        self.ghost_loc = [0, 0]
+            self.pattern = Mino.hold1
+        self.loc = [6, 0]  # mino配列のfield配列内での位置を表す[x, y]
+        self.state = [0, 0]  # [今の状態, 移行したい状態]
 
     def create(self, process):
         if process == 'drop':
@@ -39,46 +33,18 @@ class Mino:
                 self.pattern_create('next1')
                 self.pattern_create('next2')
             elif len(Mino.next2) == 0:
-                #next2にappend
+                #next2が空なのでnext2にappend
                 self.pattern_create('next2')
-    #                Mino.queue._put(mino_pattern)
-
-
         if process == 'hold':
-            i = Mino.create_hold
-            if i == 1:  # I
-                mino_pattern = ([[0, 0, 0, 0],
-                                 [1, 1, 1, 1],
-                                 [0, 0, 0, 0],
-                                 [0, 0, 0, 0], ])
-            if i == 2:  # O
-                mino_pattern = ([[2, 2],
-                                 [2, 2], ])
-            if i == 3:  # S
-                mino_pattern = ([[0, 3, 3],
-                                 [3, 3, 0],
-                                 [0, 0, 0], ])
-            if i == 4:  # Z
-                mino_pattern = ([[4, 4, 0],
-                                 [0, 4, 4],
-                                 [0, 0, 0], ])
-            if i == 5:  # J
-                mino_pattern = ([[5, 0, 0],
-                                 [5, 5, 5],
-                                 [0, 0, 0], ])
-            if i == 6:  # L
-                mino_pattern = ([[0, 0, 6],
-                                 [6, 6, 6],
-                                 [0, 0, 0], ])
-            if i == 7:  # T
-                mino_pattern = ([[0, 7, 0],
-                                 [7, 7, 7],
-                                 [0, 0, 0], ])
-            Mino.hold_mino = mino_pattern
+            self.pattern_create('hold')
 
     def pattern_create(self, list):
-        index_list = [1, 2, 3, 4, 5, 6, 7]
-        random.shuffle(index_list)
+        index_list = []
+        if list == 'next1' or list == 'next2':
+            index_list = [1, 2, 3, 4, 5, 6, 7]
+            random.shuffle(index_list)
+        if list == 'hold':
+            index_list.append(Mino.hold2_type)
         for i in index_list:
             if i == 1:  # I
                 mino_pattern = ([[0, 0, 0, 0],
@@ -112,7 +78,8 @@ class Mino:
                 Mino.next1.append(mino_pattern)
             if list == 'next2':
                 Mino.next2.append(mino_pattern)
-        pass
+            if list == 'hold':
+                Mino.hold2 = (mino_pattern)
 
     def rotate(self, direct):
         pattern_len = len(self.pattern)
@@ -145,14 +112,14 @@ class Mino:
         for y in self.pattern:
             for x in y:
                 if x != 0:
-                    mino_index = x
+                    mino_type = x
                     break
-        if Mino.now_holding == 0:
-            Mino.now_holding = mino_index
+        if Mino.hold2 == 0:
+            Mino.hold_type = mino_type
             return False
         else:
-            Mino.create_hold = Mino.now_holding
-            Mino.now_holding = mino_index
+            Mino.hold1 = Mino.hold2
+            Mino.hold2_type = mino_type
             return True
 
 
@@ -289,7 +256,7 @@ class Window:
             elif code == 7 or code == 17:
                 screen.blit(self.block_img[6], (x * block_size, y * block_size))
 
-        code = Mino.now_holding
+        code = Mino.hold2_type
         x = 1
         y = 1
         if code == 0:
@@ -515,7 +482,7 @@ hold = False
 l_cnt = 0
 r_cnt = 0
 d_cnt = 0
-threshold = 40
+threshold = 1
 
 TIMEREVENT = pygame.USEREVENT
 pygame.time.set_timer(TIMEREVENT, 500)
