@@ -196,118 +196,49 @@ class Window:
                         Window._field[y][x] = code * -1
 
     def draw(self, screen):
-        block_size = 24
-        left_margin = 72
-        bottom_margin = 24
         screen.fill((0, 0, 0))
+
+        # field描画用
         for y in range(2, Window._field_height - 2):
             for x in range(2, Window._field_width - 2):
                 code = Window._field[y][x]
-                if code == 99:
-                    screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 1 or code == 11 or code == -1:
-                    screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 2 or code == 12 or code == -2:
-                    screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 3 or code == 13 or code == -3:
-                    screen.blit(self.block_img[2], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 4 or code == 14 or code == -4:
-                    screen.blit(self.block_img[3], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 5 or code == 15 or code == -5:
-                    screen.blit(self.block_img[4], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 6 or code == 16 or code == -6:
-                    screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
-                elif code == 7 or code == 17 or code == -7:
-                    screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
+                self.blit_img(code, x, y, 72, 24)
 
-#        code = Mino.next1[0]
-        code = 0
-        draw_flag = True
+        # next描画用
         nexts_len = len(Mino.next1)
-        next_margin = 80
         for z in range(nexts_len):
             next_len = len(Mino.next1[z])
             for y in range(next_len):
                 for x in range(next_len):
                     if Mino.next1[z][y][x]:
                         code = Mino.next1[z][y][x]
-                        left_margin = 450
-    #        for i in range(7):
-    #            for j in Mino.next1[i]:
-    #                for k in j:
-    #                    if k:
-    #                        code = k
-    #                        draw_flag = False
-    #                        break
-    #                if draw_flag == False:
-    #                    break
-    #            x = 20
-    #            y = i*2
-                        if code == 0:
-                            pass
-                        elif code == 1 or code == 11:
-                            screen.blit(self.block_img[0], (left_margin + x * block_size, z * next_margin + 24 + y * block_size))
-                        elif code == 2 or code == 12:
-                            screen.blit(self.block_img[1], (left_margin + x * block_size, z * next_margin + 24 + y * block_size))
-                        elif code == 3 or code == 13:
-                            screen.blit(self.block_img[2], (left_margin + x * block_size, z * next_margin + 24 + y * block_size))
-                        elif code == 4 or code == 14:
-                            screen.blit(self.block_img[3], (left_margin + x * block_size, z * next_margin + 24 + y * block_size))
-                        elif code == 5 or code == 15:
-                            screen.blit(self.block_img[4], (left_margin + x * block_size, z * next_margin + 24 + y * block_size))
-                        elif code == 6 or code == 16:
-                            screen.blit(self.block_img[5], (left_margin + x * block_size, z * next_margin + 24 + y * block_size))
-                        elif code == 7 or code == 17:
-                            screen.blit(self.block_img[6], (left_margin + x * block_size, z * next_margin + 24 + y * block_size))
+                        self.blit_img(code, x, y, 450, 24+80*z)
 
+        # hold描画用
         for y in range(len(Mino.hold2)):
             for x in range(len(Mino.hold2)):
                 if Mino.hold2[y][x]:
                     code = Mino.hold2[y][x]
-#        code = Mino.hold2
-#        x = 1
-#        y = 1
-                    if code == 0:
-                        pass
-                    # screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
-                    elif code == 1 or code == 11:
-                        screen.blit(self.block_img[0], (24 + x * block_size, y * block_size))
-                    elif code == 2 or code == 12:
-                        hold_img = pygame.transform.scale(self.block_img[1], (20, 20))
-            #            screen.blit(self.block_img[1], (x * block_size, y * block_size))
-                        screen.blit(hold_img, (24 + x * block_size, y * block_size))
-                    elif code == 3 or code == 13:
-                        screen.blit(self.block_img[2], (24 + x * block_size, 24 + y * block_size))
-                    elif code == 4 or code == 14:
-                        screen.blit(self.block_img[3], (24 + x * block_size, 24 + y * block_size))
-                    elif code == 5 or code == 15:
-                        screen.blit(self.block_img[4], (24 + x * block_size, 24 + y * block_size))
-                    elif code == 6 or code == 16:
-                        screen.blit(self.block_img[5], (24 + x * block_size, 24 + y * block_size))
-                    elif code == 7 or code == 17:
-                        screen.blit(self.block_img[6], (24 + x * block_size, 24 + y * block_size))
+                    self.blit_img(code, x, y, 24, 24)
 
-#        for y in range(len(Mino.hold_mino)):
-#            for x in range(len(Mino.hold_mino)):
-#                code = Mino.hold_mino[y][x]
-#                if code:
-#                    if code == 99:
-#                        screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
-#                    elif code == 1 or code == 11 or code == -1:
-#                        screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
-#                    elif code == 2 or code == 12 or code == -2:
-#                        screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
-#                    elif code == 3 or code == 13 or code == -3:
-#                        screen.blit(self.block_img[2], (left_margin + x * block_size, bottom_margin + y * block_size))
-#                    elif code == 4 or code == 14 or code == -4:
-#                        screen.blit(self.block_img[3], (left_margin + x * block_size, bottom_margin + y * block_size))
-#                    elif code == 5 or code == 15 or code == -5:
-#                        screen.blit(self.block_img[4], (left_margin + x * block_size, bottom_margin + y * block_size))
-#                    elif code == 6 or code == 16 or code == -6:
-#                        screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
-#                    elif code == 7 or code == 17 or code == -7:
-#                        screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
-
+    def blit_img(self, code, x, y, left_margin, bottom_margin):
+        block_size = 24
+        if code == 99:
+            screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
+        elif code == 1 or code == 11 or code == -1:
+            screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
+        elif code == 2 or code == 12 or code == -2:
+            screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
+        elif code == 3 or code == 13 or code == -3:
+            screen.blit(self.block_img[2], (left_margin + x * block_size, bottom_margin + y * block_size))
+        elif code == 4 or code == 14 or code == -4:
+            screen.blit(self.block_img[3], (left_margin + x * block_size, bottom_margin + y * block_size))
+        elif code == 5 or code == 15 or code == -5:
+            screen.blit(self.block_img[4], (left_margin + x * block_size, bottom_margin + y * block_size))
+        elif code == 6 or code == 16 or code == -6:
+            screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
+        elif code == 7 or code == 17 or code == -7:
+            screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
 
     def load_image(self):
         self.block_img = [[], [], [], [], [], [], [], []]
@@ -345,15 +276,6 @@ class Window:
     def bottom_hit(self, mino, process):
         pattern_len = len(mino.pattern)
 
-#        for y in range(pattern_len - 1, -1, -1):
-#            for x in range(pattern_len):
-#                if mino.pattern[y][x]:
-#                    field_x = mino.loc[0] + x
-#                    field_y = mino.loc[1] + y
-#                    if Window._field[field_y + 1][field_x] > 10:
-#                        return True
-#        return False
-
         if process == 'drop':
             for y in range(pattern_len - 1, -1, -1):
                 for x in range(pattern_len):
@@ -380,10 +302,6 @@ class Window:
                                 mino.ghost_loc[1] = field_y
                 loc_y += 1
 
-
-
-
-    #    def rotate_hit(self, pattern, loc, state):
     def rotate_hit(self, mino):
         pattern_len = len(mino.pattern)
         collision_list = []
@@ -439,7 +357,6 @@ class Window:
                         else:
                             collision_list.append(0)
             if not 99 in collision_list:
-                #                self.shift_loc = shift_axis
                 mino.loc[0] += shift_axis[0]
                 mino.loc[1] += shift_axis[1]
                 mino.state[0] = mino.state[1]
@@ -468,7 +385,6 @@ class Window:
                 window.mapping(mino, 'fix')
                 window.line_check()
                 window.mapping(mino, 'line_clear')
-                #                mino = None
         return True
 
     def ghost_block(self):
@@ -476,6 +392,7 @@ class Window:
         window.mapping(mino, 'ghost')
 
 
+# mainループ
 pygame.init()
 screen_size = (600, 600)
 screen = pygame.display.set_mode(screen_size)
@@ -502,8 +419,6 @@ while True:
         fixed = False
     window.draw(screen)
     pygame.display.update()
-
-#    window.ghost_block()
 
     pygame.event.pump()
     pressed = pygame.key.get_pressed()
@@ -536,7 +451,6 @@ while True:
                 window.mapping(mino, 'fix')
                 window.line_check()
                 window.mapping(mino, 'line_clear')
-                #                mino = None
                 fixed = True
                 hold = False
             d_cnt = 0
@@ -547,7 +461,6 @@ while True:
                 window.mapping(mino, 'fix')
                 window.line_check()
                 window.mapping(mino, 'line_clear')
-                #                mino = None
                 fixed = True
                 hold = False
             else:
