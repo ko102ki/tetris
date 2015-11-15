@@ -11,8 +11,10 @@ class Mino:
     next1 = [] #  ネクストブロック7種を入れる
     next2 = [] #  ネクストブロック7種を入れる
 
-    hold1 = []
-    hold2 = []
+    hold1 = [] #  ホールド時にhold2の内容を移す
+    hold2 = [] #  落下中のminoのパターンを入れておく
+
+    fix_time = 5
 
     def __init__(self, process):
         self.create()
@@ -23,6 +25,7 @@ class Mino:
             self.pattern = Mino.hold1
         self.loc = [6, 0]  # mino配列のfield配列内での位置を表す[x, y]
         self.state = [0, 0]  # [今の状態, 移行したい状態]
+        self.fix_time = Mino.fix_time
 
     def create(self):
         if len(Mino.next1) == 0:
@@ -117,6 +120,16 @@ class Mino:
             Mino.hold2 = pattern
             return False
 
+    def fix_check(self, process):
+        if process == 'count':
+            self.fix_time -= 1
+        if process == 'reset':
+            self.fix_time = Mino.fix_time
+        if self.fix_time == 0:
+            return True
+        elif self.fix_time == 0:
+            return False
+
 
 class Window:
     _field = [
@@ -152,6 +165,7 @@ class Window:
     def __init__(self):
         self.load_image()
         self.shift_loc = [0, 0]  # 壁蹴り時のシフト幅[x, y]
+        self.lines = []
 
     def mapping(self, mino, process):
         field_x = mino.loc[0]
@@ -180,20 +194,6 @@ class Window:
                     elif process == 'fix':
                         Window._field[y][x] = code + 10
 
-        if process == 'ghost':
-            field_x = mino.ghost_loc[0] - pattern_len + 1
-            field_y = mino.ghost_loc[1] - pattern_len + 2
-            print('x, y', field_x, field_y)
-            pattern_len = len(mino.pattern)
-            end_x = field_x + pattern_len
-            end_y = field_y + pattern_len
-            for y in range(field_y, end_y):
-                for x in range(field_x, end_x):
-                    pattern_x = x - field_x
-                    pattern_y = y - field_y
-                    code = mino.pattern[pattern_y][pattern_x]  # patternリストの中を左上から右に向かって走査
-                    if code:
-                        Window._field[y][x] = code * -1
 
     def draw(self, screen):
         screen.fill((0, 0, 0))
@@ -221,6 +221,14 @@ class Window:
                     code = Mino.hold2[y][x]
                     self.blit_img(code, x, y, 24, 24)
 
+#        # line_clear描画用
+#        if self.lines:
+#            for y in self.lines:
+#                for x in range(2, Window._field_width - 2):
+#    #                code = Window._field[y][x]
+#                    code = 0
+#                    self.blit_img(code, x, y, 72, 24)
+
     def blit_img(self, code, x, y, left_margin, bottom_margin):
         block_size = 24
         if code == 99:
@@ -239,17 +247,20 @@ class Window:
             screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
         elif code == 7 or code == 17 or code == -7:
             screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
+#        elif code == 0:
+#            screen.blit(self.block_img[8], (left_margin + x * block_size, bottom_margin + y * block_size))
 
     def load_image(self):
-        self.block_img = [[], [], [], [], [], [], [], []]
-        self.block_img[0] = pygame.image.load('data/i.bmp')
-        self.block_img[1] = pygame.image.load('data/o.bmp')
-        self.block_img[2] = pygame.image.load('data/s.bmp')
-        self.block_img[3] = pygame.image.load('data/z.bmp')
-        self.block_img[4] = pygame.image.load('data/j.bmp')
-        self.block_img[5] = pygame.image.load('data/l.bmp')
-        self.block_img[6] = pygame.image.load('data/t.bmp')
-        self.block_img[7] = pygame.image.load('data/w.bmp')
+        self.block_img = []
+        self.block_img.append(pygame.image.load('data/i.bmp'))
+        self.block_img.append(pygame.image.load('data/o.bmp'))
+        self.block_img.append(pygame.image.load('data/s.bmp'))
+        self.block_img.append(pygame.image.load('data/z.bmp'))
+        self.block_img.append(pygame.image.load('data/j.bmp'))
+        self.block_img.append(pygame.image.load('data/l.bmp'))
+        self.block_img.append(pygame.image.load('data/t.bmp'))
+        self.block_img.append(pygame.image.load('data/w.bmp'))
+        self.block_img.append(pygame.image.load('data/c.bmp'))
 
     def left_hit(self, mino):
         pattern_len = len(mino.pattern)
@@ -285,22 +296,6 @@ class Window:
                         if Window._field[field_y + 1][field_x] > 10:
                             return True
             return False
-
-        elif process == 'ghost':
-            loc_x = mino.loc[0]
-            loc_y = mino.loc[1]
-            ghost_flag = True
-            while ghost_flag:
-                for y in range(pattern_len - 1, -1, -1):
-                    for x in range(pattern_len):
-                        if mino.pattern[y][x]:
-                            field_x = loc_x + x
-                            field_y = loc_y + y
-                            if Window._field[field_y + 1][field_x] > 10:
-                                ghost_flag = False
-                                mino.ghost_loc[0] = field_x
-                                mino.ghost_loc[1] = field_y
-                loc_y += 1
 
     def rotate_hit(self, mino):
         pattern_len = len(mino.pattern)
@@ -411,6 +406,7 @@ threshold = 50
 
 TIMEREVENT = pygame.USEREVENT
 pygame.time.set_timer(TIMEREVENT, 500)
+first_collision = False
 
 while True:
     if fixed:
@@ -448,22 +444,29 @@ while True:
                 mino.control('down')
                 window.mapping(mino, 'drop')
             else:
-                window.mapping(mino, 'fix')
-                window.line_check()
-                window.mapping(mino, 'line_clear')
-                fixed = True
-                hold = False
+                if first_collision == False:
+                    first_collision = True
+                else:
+                    mino.fix_time = 2
+                if mino.fix_check('count'):
+                    window.mapping(mino, 'fix')
+                    window.line_check()
+                    window.mapping(mino, 'line_clear')
+                    fixed = True
+                    hold = False
             d_cnt = 0
 
     for event in pygame.event.get():
         if event.type == TIMEREVENT:
             if window.bottom_hit(mino, 'drop'):
-                window.mapping(mino, 'fix')
-                window.line_check()
-                window.mapping(mino, 'line_clear')
-                fixed = True
-                hold = False
+                if mino.fix_check('count'):
+                    window.mapping(mino, 'fix')
+                    window.line_check()
+                    window.mapping(mino, 'line_clear')
+                    fixed = True
+                    hold = False
             else:
+                mino.fix_check('reset')
                 window.mapping(mino, 'clear')
                 mino.control('down')
                 window.mapping(mino, 'drop')
