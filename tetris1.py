@@ -7,14 +7,14 @@ from pygame.locals import *
 
 
 class Mino:
-#    queue = Queue(8)
     next1 = [] #  ネクストブロック7種を入れる
     next2 = [] #  ネクストブロック7種を入れる
 
     hold1 = [] #  ホールド時にhold2の内容を移す
     hold2 = [] #  落下中のminoのパターンを入れておく
 
-    fix_time = 3
+    fix_time = 0
+    drop_time = 0
 
     def __init__(self, process):
         self.create()
@@ -120,15 +120,25 @@ class Mino:
             Mino.hold2 = pattern
             return False
 
-    def fix_check(self, process):
+    def fix_check(self, process, time):
         if process == 'count':
-            self.fix_time -= 1
-        if process == 'reset':
-            self.fix_time = Mino.fix_time
-        if self.fix_time == 0:
+            Mino.fix_time += time
+            if Mino.fix_time >= 0.5:
+                Mino.fix_time = 0
+                return True
+#            self.fix_time -= 1
+#        if process == 'reset':
+#            self.fix_time = Mino.fix_time
+#        if self.fix_time == 0:
+#            return True
+#        elif self.fix_time == 0:
+#            return False
+
+    def drop(self, time):
+        Mino.drop_time += time
+        if Mino.drop_time >= 1:
+            Mino.drop_time = 0
             return True
-        elif self.fix_time == 0:
-            return False
 
 
 class Window:
@@ -386,7 +396,6 @@ class Window:
         window.bottom_hit(mino, 'ghost')
         window.mapping(mino, 'ghost')
 
-
 # mainループ
 pygame.init()
 screen_size = (600, 600)
@@ -414,6 +423,7 @@ while True:
 
     time_passed = clock.tick(60)
     time_passed_seconds = time_passed / 1000.0
+    print(time_passed_seconds)
 
     if fixed:
         mino = Mino('drop')
@@ -422,60 +432,18 @@ while True:
     window.draw(screen)
     pygame.display.update()
 
-#    pygame.event.pump()
-#    pressed = pygame.key.get_pressed()
-#    if pressed[K_LEFT]:
-#        l_cnt += 1
-#        if l_cnt == threshold:
-#            if not window.left_hit(mino):
-#                window.mapping(mino, 'clear')
-#                mino.control('left')
-#                window.mapping(mino, 'drop')
-#            l_cnt = 0
-#
-#    if pressed[K_RIGHT]:
-#        r_cnt += 1
-#        if r_cnt == threshold:
-#            if not window.right_hit(mino):
-#                window.mapping(mino, 'clear')
-#                mino.control('right')
-#                window.mapping(mino, 'drop')
-#            r_cnt = 0
-
-#    if pressed[K_DOWN]:
-#        d_cnt += 1
-#        if d_cnt == threshold:
-#            if not window.bottom_hit(mino, 'drop'):
-#                window.mapping(mino, 'clear')
-#                mino.control('down')
-#                window.mapping(mino, 'drop')
-#            else:
-#                if first_collision == False:
-#                    first_collision = True
-#                else:
-#                    mino.fix_time = 2
-#                if mino.fix_check('count'):
-#                    window.mapping(mino, 'fix')
-#                    window.line_check()
-#                    window.mapping(mino, 'line_clear')
-#                    fixed = True
-#                    hold = False
-#            d_cnt = 0
-
-#    for event in pygame.key.get_repeat():
-
-
     for event in pygame.event.get():
-        if event.type == TIMEREVENT:
+#        if event.type == TIMEREVENT:
+        if mino.drop(time_passed_seconds):
             if window.bottom_hit(mino, 'drop'):
-                if mino.fix_check('count'):
+                if mino.fix_check('count', time_passed_seconds):
                     window.mapping(mino, 'fix')
                     window.line_check()
                     window.mapping(mino, 'line_clear')
                     fixed = True
                     hold = False
             else:
-                mino.fix_check('reset')
+                mino.fix_check('reset', time_passed_seconds)
                 window.mapping(mino, 'clear')
                 mino.control('down')
                 window.mapping(mino, 'drop')
@@ -528,7 +496,8 @@ while True:
                         first_collision = True
                     else:
                         mino.fix_time = 2
-                    if mino.fix_check('count'):
+                    if mino.fix_check('count', time_passed_seconds):
+#                    if mino.fix_check('count'):
                         window.mapping(mino, 'fix')
                         window.line_check()
                         window.mapping(mino, 'line_clear')
