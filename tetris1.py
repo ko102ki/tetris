@@ -14,7 +14,7 @@ class Mino:
     hold1 = [] #  ホールド時にhold2の内容を移す
     hold2 = [] #  落下中のminoのパターンを入れておく
 
-    fix_time = 5
+    fix_time = 3
 
     def __init__(self, process):
         self.create()
@@ -402,13 +402,19 @@ hold = False
 l_cnt = 0
 r_cnt = 0
 d_cnt = 0
-threshold = 50
+threshold = 1
+pygame.key.set_repeat(500, 10)
 
 TIMEREVENT = pygame.USEREVENT
-pygame.time.set_timer(TIMEREVENT, 500)
+pygame.time.set_timer(TIMEREVENT, 50)
 first_collision = False
+clock = pygame.time.Clock()
 
 while True:
+
+    time_passed = clock.tick(60)
+    time_passed_seconds = time_passed / 1000.0
+
     if fixed:
         mino = Mino('drop')
         window.mapping(mino, 'drop')
@@ -416,45 +422,48 @@ while True:
     window.draw(screen)
     pygame.display.update()
 
-    pygame.event.pump()
-    pressed = pygame.key.get_pressed()
-    if pressed[K_LEFT]:
-        l_cnt += 1
-        if l_cnt == threshold:
-            if not window.left_hit(mino):
-                window.mapping(mino, 'clear')
-                mino.control('left')
-                window.mapping(mino, 'drop')
-            l_cnt = 0
+#    pygame.event.pump()
+#    pressed = pygame.key.get_pressed()
+#    if pressed[K_LEFT]:
+#        l_cnt += 1
+#        if l_cnt == threshold:
+#            if not window.left_hit(mino):
+#                window.mapping(mino, 'clear')
+#                mino.control('left')
+#                window.mapping(mino, 'drop')
+#            l_cnt = 0
+#
+#    if pressed[K_RIGHT]:
+#        r_cnt += 1
+#        if r_cnt == threshold:
+#            if not window.right_hit(mino):
+#                window.mapping(mino, 'clear')
+#                mino.control('right')
+#                window.mapping(mino, 'drop')
+#            r_cnt = 0
 
-    if pressed[K_RIGHT]:
-        r_cnt += 1
-        if r_cnt == threshold:
-            if not window.right_hit(mino):
-                window.mapping(mino, 'clear')
-                mino.control('right')
-                window.mapping(mino, 'drop')
-            r_cnt = 0
+#    if pressed[K_DOWN]:
+#        d_cnt += 1
+#        if d_cnt == threshold:
+#            if not window.bottom_hit(mino, 'drop'):
+#                window.mapping(mino, 'clear')
+#                mino.control('down')
+#                window.mapping(mino, 'drop')
+#            else:
+#                if first_collision == False:
+#                    first_collision = True
+#                else:
+#                    mino.fix_time = 2
+#                if mino.fix_check('count'):
+#                    window.mapping(mino, 'fix')
+#                    window.line_check()
+#                    window.mapping(mino, 'line_clear')
+#                    fixed = True
+#                    hold = False
+#            d_cnt = 0
 
-    if pressed[K_DOWN]:
-        d_cnt += 1
-        if d_cnt == threshold:
-            if not window.bottom_hit(mino, 'drop'):
-                window.mapping(mino, 'clear')
-                mino.control('down')
-                window.mapping(mino, 'drop')
-            else:
-                if first_collision == False:
-                    first_collision = True
-                else:
-                    mino.fix_time = 2
-                if mino.fix_check('count'):
-                    window.mapping(mino, 'fix')
-                    window.line_check()
-                    window.mapping(mino, 'line_clear')
-                    fixed = True
-                    hold = False
-            d_cnt = 0
+#    for event in pygame.key.get_repeat():
+
 
     for event in pygame.event.get():
         if event.type == TIMEREVENT:
@@ -508,6 +517,35 @@ while True:
                 if window.hard_drop():
                     fixed = True
                     hold = False
+
+            if event.key == K_DOWN:
+                if not window.bottom_hit(mino, 'drop'):
+                    window.mapping(mino, 'clear')
+                    mino.control('down')
+                    window.mapping(mino, 'drop')
+                else:
+                    if first_collision == False:
+                        first_collision = True
+                    else:
+                        mino.fix_time = 2
+                    if mino.fix_check('count'):
+                        window.mapping(mino, 'fix')
+                        window.line_check()
+                        window.mapping(mino, 'line_clear')
+                        fixed = True
+                        hold = False
+
+            if event.key == K_LEFT:
+                if not window.left_hit(mino):
+                    window.mapping(mino, 'clear')
+                    mino.control('left')
+                    window.mapping(mino, 'drop')
+
+            if event.key == K_RIGHT:
+                if not window.right_hit(mino):
+                    window.mapping(mino, 'clear')
+                    mino.control('right')
+                    window.mapping(mino, 'drop')
 
     window.draw(screen)
     pygame.display.update()
