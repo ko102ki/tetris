@@ -23,7 +23,7 @@ class Mino:
             Mino.next1.append(Mino.next2.pop(0)) #  next2からnext1へブロック１つを移す
         elif process == 'hold':
             self.pattern = Mino.hold1
-        self.loc = [6, 0]  # mino配列のfield配列内での位置を表す[x, y]
+        self.loc = [6, 1]  # mino配列のfield配列内での位置を表す[x, y]
         self.state = [0, 0]  # [今の状態, 移行したい状態]
         self.fix_time = Mino.fix_time
 
@@ -123,12 +123,12 @@ class Mino:
     def fix_check(self, process, time):
         if process == 'count':
             Mino.fix_time += time
-            if Mino.fix_time >= 0.5:
+            if Mino.fix_time >= 500:
                 Mino.fix_time = 0
                 return True
 #            self.fix_time -= 1
-#        if process == 'reset':
-#            self.fix_time = Mino.fix_time
+        if process == 'reset':
+            Mino.fix_time = 0
 #        if self.fix_time == 0:
 #            return True
 #        elif self.fix_time == 0:
@@ -136,7 +136,7 @@ class Mino:
 
     def drop(self, time):
         Mino.drop_time += time
-        if Mino.drop_time >= 1:
+        if Mino.drop_time >= 500:
             Mino.drop_time = 0
             return True
 
@@ -176,6 +176,7 @@ class Window:
         self.load_image()
         self.shift_loc = [0, 0]  # 壁蹴り時のシフト幅[x, y]
         self.lines = []
+        self.key_down_time = 0
 
     def mapping(self, mino, process):
         field_x = mino.loc[0]
@@ -244,7 +245,9 @@ class Window:
         if code == 99:
             screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
         elif code == 1 or code == 11 or code == -1:
+#            self.block_img[0].fill((255,255,255))
             screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
+#            screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
         elif code == 2 or code == 12 or code == -2:
             screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
         elif code == 3 or code == 13 or code == -3:
@@ -396,6 +399,13 @@ class Window:
         window.bottom_hit(mino, 'ghost')
         window.mapping(mino, 'ghost')
 
+#    def key(self, time, key):
+#        pressed = pygame.key.get_pressed()
+#        if pressed[key]:
+#            self.key_down_time += time
+#            if self.key_down_time >= 500:
+#                return True
+
 # mainループ
 pygame.init()
 screen_size = (600, 600)
@@ -411,19 +421,20 @@ hold = False
 l_cnt = 0
 r_cnt = 0
 d_cnt = 0
-threshold = 1
-pygame.key.set_repeat(500, 10)
+threshold = 5
+#pygame.key.set_repeat(70, 10)
 
-TIMEREVENT = pygame.USEREVENT
-pygame.time.set_timer(TIMEREVENT, 50)
+#TIMEREVENT = pygame.USEREVENT
+#pygame.time.set_timer(TIMEREVENT, 50)
 first_collision = False
 clock = pygame.time.Clock()
+
+collision_flag = False
 
 while True:
 
     time_passed = clock.tick(60)
-    time_passed_seconds = time_passed / 1000.0
-    print(time_passed_seconds)
+#    print(time_passed)
 
     if fixed:
         mino = Mino('drop')
@@ -432,21 +443,75 @@ while True:
     window.draw(screen)
     pygame.display.update()
 
-    for event in pygame.event.get():
-#        if event.type == TIMEREVENT:
-        if mino.drop(time_passed_seconds):
-            if window.bottom_hit(mino, 'drop'):
-                if mino.fix_check('count', time_passed_seconds):
+    if mino.drop(time_passed):
+        if not window.bottom_hit(mino, 'drop'):
+#                if mino.fix_check('count', time_passed):
+#                    collision_flag = True
+#                    window.mapping(mino, 'fix')
+#                    window.line_check()
+#                    window.mapping(mino, 'line_clear')
+#                    fixed = True
+#                    hold = False
+#            else:
+            #                mino.fix_check('reset', time_passed_seconds)
+            window.mapping(mino, 'clear')
+            mino.control('down')
+            window.mapping(mino, 'drop')
+            mino.fix_check('reset', time_passed)
+        else:
+            collision_flag = True
+
+    if collision_flag:
+        if mino.fix_check('count', time_passed):
+            window.mapping(mino, 'fix')
+            window.line_check()
+            window.mapping(mino, 'line_clear')
+            fixed = True
+            hold = False
+            collision_flag = False
+
+    pressed = pygame.key.get_pressed()
+    if pressed[K_DOWN]:
+        d_cnt += 1
+        if d_cnt >= threshold:
+            if not window.bottom_hit(mino, 'drop'):
+                window.mapping(mino, 'clear')
+                mino.control('down')
+                window.mapping(mino, 'drop')
+            else:
+                #                    if first_collision == False:
+                #                        first_collision = True
+                #                    else:
+                #                        mino.fix_time = 2
+                if mino.fix_check('count', time_passed):
+                    #                    if mino.fix_check('count'):
                     window.mapping(mino, 'fix')
                     window.line_check()
                     window.mapping(mino, 'line_clear')
                     fixed = True
                     hold = False
-            else:
-                mino.fix_check('reset', time_passed_seconds)
+            d_cnt = 0
+
+    if pressed[K_LEFT]:
+        l_cnt += 1
+        if l_cnt >= threshold:
+            if not window.left_hit(mino):
                 window.mapping(mino, 'clear')
-                mino.control('down')
+                mino.control('left')
                 window.mapping(mino, 'drop')
+            l_cnt = 0
+
+    if pressed[K_RIGHT]:
+        r_cnt += 1
+        if r_cnt >= threshold:
+            if not window.right_hit(mino):
+                window.mapping(mino, 'clear')
+                mino.control('right')
+                window.mapping(mino, 'drop')
+            r_cnt = 0
+
+    for event in pygame.event.get():
+#        if event.type == TIMEREVENT:
         if event.type == KEYDOWN:
             if event.key == K_ESCAPE:
                 sys.quit()
@@ -486,35 +551,34 @@ while True:
                     fixed = True
                     hold = False
 
-            if event.key == K_DOWN:
-                if not window.bottom_hit(mino, 'drop'):
-                    window.mapping(mino, 'clear')
-                    mino.control('down')
-                    window.mapping(mino, 'drop')
-                else:
-                    if first_collision == False:
-                        first_collision = True
-                    else:
-                        mino.fix_time = 2
-                    if mino.fix_check('count', time_passed_seconds):
-#                    if mino.fix_check('count'):
-                        window.mapping(mino, 'fix')
-                        window.line_check()
-                        window.mapping(mino, 'line_clear')
-                        fixed = True
-                        hold = False
+#            if event.key == K_DOWN:
+#                if not window.bottom_hit(mino, 'drop'):
+#                    window.mapping(mino, 'clear')
+#                    mino.control('down')
+#                    window.mapping(mino, 'drop')
+#                else:
+##                    if first_collision == False:
+##                        first_collision = True
+##                    else:
+##                        mino.fix_time = 2
+#                    if mino.fix_check('count', time_passed):
+##                    if mino.fix_check('count'):
+#                        window.mapping(mino, 'fix')
+#                        window.line_check()
+#                        window.mapping(mino, 'line_clear')
+#                        fixed = True
+#                        hold = False
 
-            if event.key == K_LEFT:
-                if not window.left_hit(mino):
-                    window.mapping(mino, 'clear')
-                    mino.control('left')
-                    window.mapping(mino, 'drop')
+#            if event.key == K_LEFT:
+#                if not window.left_hit(mino):
+#                    window.mapping(mino, 'clear')
+#                    mino.control('left')
+#                    window.mapping(mino, 'drop')
 
-            if event.key == K_RIGHT:
-                if not window.right_hit(mino):
-                    window.mapping(mino, 'clear')
-                    mino.control('right')
-                    window.mapping(mino, 'drop')
-
+#            if event.key == K_RIGHT:
+#                if not window.right_hit(mino):
+#                    window.mapping(mino, 'clear')
+#                    mino.control('right')
+#                    window.mapping(mino, 'drop')
     window.draw(screen)
     pygame.display.update()
