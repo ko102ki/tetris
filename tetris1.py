@@ -173,7 +173,14 @@ class Window:
                 del Window._field[y]
             for y in self.lines:
                 Window._field.insert(2, [99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 99])
-            return 0
+#            return 0
+
+        if process == 'clear_effect':
+            if len(self.lines) == 0:
+                return True
+            for y in self.lines:
+                self._field[y] = [99, 99, 99, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 99, 99, 99]
+            return False
 
         for y in range(field_y, end_y):
             for x in range(field_x, end_x):
@@ -279,6 +286,9 @@ class Window:
             else:
                 self.block_img[6].set_alpha(255)
                 screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
+        elif code == 100:
+            screen.blit(self.block_img[8], (left_margin + x * block_size, bottom_margin + y * block_size))
+
 
     def load_image(self):
         self.block_img = []
@@ -400,7 +410,7 @@ class Window:
                 break
 
 
-    def hard_drop(self):
+    def hard_drop(self, time_passed):
         hard_flag = True
         while hard_flag:
             if not window.bottom_hit(mino, 'drop'):
@@ -410,6 +420,16 @@ class Window:
                 hard_flag = False
                 window.mapping(mino, 'fix')
                 window.line_check()
+                #
+                while True:
+                    if window.mapping(mino, 'clear_effect'):
+                        break
+                    time_passed += time_passed
+                    if time_passed >= 100000:
+                        break
+                    window.draw(screen)
+                    pygame.display.update()
+                #
                 window.mapping(mino, 'line_clear')
         return True
 
@@ -471,6 +491,7 @@ clock = pygame.time.Clock()
 
 collision_flag = False
 
+
 while True:
 
     time_passed = clock.tick(60)
@@ -499,11 +520,22 @@ while True:
     if collision_flag:
             window.mapping(mino, 'fix')
             window.line_check()
+            #
+            while True:
+                if window.mapping(mino, 'clear_effect'):
+                    break
+                time_passed += time_passed
+                if time_passed >= 100000:
+                    break
+                window.draw(screen)
+                pygame.display.update()
+                #
             window.mapping(mino, 'line_clear')
             fixed = True
             hold_flag = False
             collision_flag = False
     # 自由落下ここまで
+
 
     pressed = pygame.key.get_pressed()
     if pressed[K_DOWN]:
@@ -518,6 +550,16 @@ while True:
             else:
                 window.mapping(mino, 'fix')
                 window.line_check()
+                #
+                while True:
+                    if window.mapping(mino, 'clear_effect'):
+                        break
+                    time_passed += time_passed
+                    if time_passed >= 100000:
+                        break
+                    window.draw(screen)
+                    pygame.display.update()
+                #
                 window.mapping(mino, 'line_clear')
                 fixed = True
                 hold_flag = False
@@ -594,7 +636,7 @@ while True:
                     window.mapping(mino, 'drop')
 
             if event.key == K_UP:
-                if window.hard_drop():
+                if window.hard_drop(time_passed):
                     fixed = True
                     hold_flag = False
 
