@@ -4,6 +4,7 @@ import pygame
 import sys
 from queue import Queue
 from pygame.locals import *
+import copy
 
 
 class Mino:
@@ -13,7 +14,6 @@ class Mino:
     hold1 = [] #  ホールド時にhold2の内容を移す
     hold2 = [] #  落下中のminoのパターンを入れておく
 
-    fix_time = 0
     drop_time = 0
 
     def __init__(self, process):
@@ -23,9 +23,8 @@ class Mino:
             Mino.next1.append(Mino.next2.pop(0)) #  next2からnext1へブロック１つを移す
         elif process == 'hold':
             self.pattern = Mino.hold1
-        self.loc = [6, 1]  # mino配列のfield配列内での位置を表す[x, y]
+        self.loc = [6, 3]  # mino配列のfield配列内での位置を表す[x, y]
         self.state = [0, 0]  # [今の状態, 移行したい状態]
-        self.fix_time = Mino.fix_time
 
     def create(self):
         if len(Mino.next1) == 0:
@@ -120,20 +119,6 @@ class Mino:
             Mino.hold2 = pattern
             return False
 
-    def fix_check(self, process, time):
-        if process == 'count':
-            Mino.fix_time += time
-            if Mino.fix_time >= 500:
-                Mino.fix_time = 0
-                return True
-#            self.fix_time -= 1
-        if process == 'reset':
-            Mino.fix_time = 0
-#        if self.fix_time == 0:
-#            return True
-#        elif self.fix_time == 0:
-#            return False
-
     def drop(self, time):
         Mino.drop_time += time
         if Mino.drop_time >= 500:
@@ -175,7 +160,7 @@ class Window:
     def __init__(self):
         self.load_image()
         self.shift_loc = [0, 0]  # 壁蹴り時のシフト幅[x, y]
-        self.lines = []
+        self.lines = []  # 消去するライン
         self.key_down_time = 0
 
     def mapping(self, mino, process):
@@ -204,6 +189,8 @@ class Window:
                         Window._field[y][x] = 0
                     elif process == 'fix':
                         Window._field[y][x] = code + 10
+                    elif process == 'ghost':
+                        Window._field[y][x] = -1*code
 
 
     def draw(self, screen):
@@ -232,34 +219,80 @@ class Window:
                     code = Mino.hold2[y][x]
                     self.blit_img(code, x, y, 24, 24)
 
-#        # line_clear描画用
-#        if self.lines:
-#            for y in self.lines:
-#                for x in range(2, Window._field_width - 2):
-#    #                code = Window._field[y][x]
-#                    code = 0
-#                    self.blit_img(code, x, y, 72, 24)
 
     def blit_img(self, code, x, y, left_margin, bottom_margin):
         block_size = 24
         if code == 99:
             screen.blit(self.block_img[7], (left_margin + x * block_size, bottom_margin + y * block_size))
         elif code == 1 or code == 11 or code == -1:
+            if code == -1:
+                self.block_img[0].set_alpha(100)
+                screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
 #            self.block_img[0].fill((255,255,255))
-            screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
+            else:
+                self.block_img[0].set_alpha(255)
+                screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
 #            screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
+
         elif code == 2 or code == 12 or code == -2:
-            screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
+            if code == -2:
+                self.block_img[1].set_alpha(100)
+                screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
+            else:
+                self.block_img[1].set_alpha(255)
+                screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
+
         elif code == 3 or code == 13 or code == -3:
-            screen.blit(self.block_img[2], (left_margin + x * block_size, bottom_margin + y * block_size))
+            if code == -3:
+                self.block_img[2].set_alpha(100)
+                screen.blit(self.block_img[2], (left_margin + x * block_size, bottom_margin + y * block_size))
+            else:
+                self.block_img[2].set_alpha(255)
+                screen.blit(self.block_img[2], (left_margin + x * block_size, bottom_margin + y * block_size))
+
         elif code == 4 or code == 14 or code == -4:
-            screen.blit(self.block_img[3], (left_margin + x * block_size, bottom_margin + y * block_size))
+            if code == -4:
+                self.block_img[3].set_alpha(100)
+                screen.blit(self.block_img[3], (left_margin + x * block_size, bottom_margin + y * block_size))
+            else:
+                self.block_img[3].set_alpha(255)
+                screen.blit(self.block_img[3], (left_margin + x * block_size, bottom_margin + y * block_size))
+
         elif code == 5 or code == 15 or code == -5:
-            screen.blit(self.block_img[4], (left_margin + x * block_size, bottom_margin + y * block_size))
+            if code == -5:
+                self.block_img[4].set_alpha(100)
+                screen.blit(self.block_img[4], (left_margin + x * block_size, bottom_margin + y * block_size))
+            else:
+                self.block_img[4].set_alpha(255)
+                screen.blit(self.block_img[4], (left_margin + x * block_size, bottom_margin + y * block_size))
+
         elif code == 6 or code == 16 or code == -6:
-            screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
+            if code == -6:
+                self.block_img[5].set_alpha(100)
+                screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
+            else:
+                self.block_img[5].set_alpha(255)
+                screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
+
         elif code == 7 or code == 17 or code == -7:
-            screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
+            if code == -7:
+                self.block_img[6].set_alpha(100)
+                screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
+            else:
+                self.block_img[6].set_alpha(255)
+                screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
+#        elif code == 2 or code == 12 or code == -2:
+#            screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
+#        elif code == 3 or code == 13 or code == -3:
+#            screen.blit(self.block_img[2], (left_margin + x * block_size, bottom_margin + y * block_size))
+#        elif code == 4 or code == 14 or code == -4:
+#            screen.blit(self.block_img[3], (left_margin + x * block_size, bottom_margin + y * block_size))
+#        elif code == 5 or code == 15 or code == -5:
+#            screen.blit(self.block_img[4], (left_margin + x * block_size, bottom_margin + y * block_size))
+#        elif code == 6 or code == 16 or code == -6:
+#            screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
+#        elif code == 7 or code == 17 or code == -7:
+#            screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
 #        elif code == 0:
 #            screen.blit(self.block_img[8], (left_margin + x * block_size, bottom_margin + y * block_size))
 
@@ -372,6 +405,7 @@ class Window:
             collision_list = []
         return True
 
+
     def line_check(self):
         self.lines = []
         for y in range(Window._field_height - 4, 2, -1):
@@ -381,13 +415,14 @@ class Window:
             if zero_cnt == 10:
                 break
 
+
     def hard_drop(self):
         hard_flag = True
         while hard_flag:
             if not window.bottom_hit(mino, 'drop'):
                 window.mapping(mino, 'clear')
                 mino.control('down')
-                window.mapping(mino, 'drop')
+#                window.mapping(mino, 'drop')
             else:
                 hard_flag = False
                 window.mapping(mino, 'fix')
@@ -395,16 +430,74 @@ class Window:
                 window.mapping(mino, 'line_clear')
         return True
 
-    def ghost_block(self):
-        window.bottom_hit(mino, 'ghost')
-        window.mapping(mino, 'ghost')
+    def g_hard_drop(self):
+        hard_flag = True
+        while hard_flag:
+            if not window.bottom_hit(ghost, 'drop'):
+                window.mapping(ghost, 'clear')
+                ghost.control('down')
+                window.mapping(ghost, 'ghost')
+            else:
+                hard_flag = False
+                window.mapping(ghost, 'ghost')
+#                window.line_check()
+#                window.mapping(mino, 'line_clear')
+        return True
 
-#    def key(self, time, key):
-#        pressed = pygame.key.get_pressed()
-#        if pressed[key]:
-#            self.key_down_time += time
-#            if self.key_down_time >= 500:
-#                return True
+#            else:
+#                hard_flag = False
+#                window.mapping(ghost, 'ghost')
+#                window.line_check()
+#                window.mapping(ghost, 'line_clear')
+#            return True
+
+#    def ghost(self):
+#        ghost_flag = True
+#        while ghost_flag:
+#            if not window.bottom_hit(ghost, 'drop'):
+#                window.mapping(ghost, 'clear')
+#                mino.control('down')
+#                window.mapping(ghost, 'drop')
+#            else:
+#                window.mapping(ghost, 'ghost')
+#                ghost_flag = False
+#    #                window.line_check()
+#    #                window.mapping(ghost, 'line_clear')
+
+class Ghost:
+    def __init__(self):
+#        self.loc = copy.deepcopy(mino.loc)
+#        self.loc[1] = copy.deepcopy(mino.loc[1]) + 5
+#        self.pattern = copy.deepcopy(mino.pattern)
+        self.loc = copy.deepcopy(mino.loc)
+        self.pattern = copy.deepcopy(mino.pattern)
+#        self.loc[1] = copy.deepcopy(mino.loc[1])
+#        self.hard_drop()
+#        Window.g_hard_drop(self)
+
+    def update(self):
+        self.loc = copy.deepcopy(mino.loc)
+#        self.loc[1] = copy.deepcopy(mino.loc[1])
+        self.pattern = copy.deepcopy(mino.pattern)
+
+#    def hard_drop(self):
+#        hard_flag = True
+#        while hard_flag:
+#            if window.bottom_hit(self, 'drop'):
+#                window.mapping(self, 'clear')
+#                window.mapping(self, 'ghost')
+#                break
+#            window.mapping(self, 'clear')
+#            self.loc[1] += 1
+#            window.mapping(self, 'ghost')
+
+    def control(self, direct):
+        if direct == 'left':
+            self.loc[0] -= 1
+        if direct == 'right':
+            self.loc[0] += 1
+        if direct == 'down':
+            self.loc[1] += 1
 
 # mainループ
 pygame.init()
@@ -414,61 +507,67 @@ screen = pygame.display.set_mode(screen_size)
 # インスタンス生成
 mino = Mino('drop')
 window = Window()
+
+ghost = Ghost()
+window.g_hard_drop()
+
 window.mapping(mino, 'drop')
+#ghost = copy.deepcopy(mino)
+#ghost = copy.copy(mino)
+#window.ghost()
+
 fixed = False
 hold = False
 # キー入力用カウンタ
 l_cnt = 0
 r_cnt = 0
 d_cnt = 0
-threshold = 5
+threshold = 1
 #pygame.key.set_repeat(70, 10)
 
-#TIMEREVENT = pygame.USEREVENT
-#pygame.time.set_timer(TIMEREVENT, 50)
-first_collision = False
 clock = pygame.time.Clock()
 
 collision_flag = False
 
 while True:
+#    window.ghost()
 
     time_passed = clock.tick(60)
 #    print(time_passed)
 
     if fixed:
         mino = Mino('drop')
+        ghost = Ghost()
+#        ghost = copy.copy(mino)
+        window.g_hard_drop()
         window.mapping(mino, 'drop')
         fixed = False
+
     window.draw(screen)
     pygame.display.update()
 
+    # 自由落下
     if mino.drop(time_passed):
         if not window.bottom_hit(mino, 'drop'):
-#                if mino.fix_check('count', time_passed):
-#                    collision_flag = True
-#                    window.mapping(mino, 'fix')
-#                    window.line_check()
-#                    window.mapping(mino, 'line_clear')
-#                    fixed = True
-#                    hold = False
-#            else:
-            #                mino.fix_check('reset', time_passed_seconds)
             window.mapping(mino, 'clear')
             mino.control('down')
+            ghost.update()
+            window.g_hard_drop()
             window.mapping(mino, 'drop')
-            mino.fix_check('reset', time_passed)
         else:
             collision_flag = True
 
     if collision_flag:
-        if mino.fix_check('count', time_passed):
             window.mapping(mino, 'fix')
             window.line_check()
             window.mapping(mino, 'line_clear')
             fixed = True
             hold = False
             collision_flag = False
+    # 自由落下ここまで
+
+#    ghost.update()
+#    window.mapping(ghost, 'clear')
 
     pressed = pygame.key.get_pressed()
     if pressed[K_DOWN]:
@@ -477,19 +576,17 @@ while True:
             if not window.bottom_hit(mino, 'drop'):
                 window.mapping(mino, 'clear')
                 mino.control('down')
+#                window.mapping(ghost, 'clear')
+                ghost.update()
+                window.g_hard_drop()
                 window.mapping(mino, 'drop')
+#                window.mapping(ghost, 'ghost')
             else:
-                #                    if first_collision == False:
-                #                        first_collision = True
-                #                    else:
-                #                        mino.fix_time = 2
-                if mino.fix_check('count', time_passed):
-                    #                    if mino.fix_check('count'):
-                    window.mapping(mino, 'fix')
-                    window.line_check()
-                    window.mapping(mino, 'line_clear')
-                    fixed = True
-                    hold = False
+                window.mapping(mino, 'fix')
+                window.line_check()
+                window.mapping(mino, 'line_clear')
+                fixed = True
+                hold = False
             d_cnt = 0
 
     if pressed[K_LEFT]:
@@ -497,8 +594,15 @@ while True:
         if l_cnt >= threshold:
             if not window.left_hit(mino):
                 window.mapping(mino, 'clear')
+#                window.mapping(ghost, 'clear')
                 mino.control('left')
+
+                window.mapping(ghost, 'clear')
+                ghost.update()
+                window.g_hard_drop()
+
                 window.mapping(mino, 'drop')
+#                window.mapping(ghost, 'ghost')
             l_cnt = 0
 
     if pressed[K_RIGHT]:
@@ -507,36 +611,50 @@ while True:
             if not window.right_hit(mino):
                 window.mapping(mino, 'clear')
                 mino.control('right')
+                window.mapping(ghost, 'clear')
+                ghost.update()
+                window.g_hard_drop()
                 window.mapping(mino, 'drop')
+#                window.mapping(ghost, 'ghost')
             r_cnt = 0
 
     for event in pygame.event.get():
-#        if event.type == TIMEREVENT:
         if event.type == KEYDOWN:
             if event.key == K_ESCAPE:
                 sys.quit()
 
             if event.key == K_z:
                 window.mapping(mino, 'clear')
+                window.mapping(ghost, 'clear')
+
                 mino.rotate('left')
                 if window.rotate_hit(mino):
                     mino.rotate('right')
-                    window.mapping(mino, 'drop')
-                else:
-                    window.mapping(mino, 'drop')
+#                    window.mapping(mino, 'drop')
+#                else:
+#                    window.mapping(mino, 'drop')
+                ghost.update()
+                window.g_hard_drop()
+                window.mapping(mino, 'drop')
 
             if event.key == K_x:
                 window.mapping(mino, 'clear')
+                window.mapping(ghost, 'clear')
+
                 mino.rotate('right')
                 if window.rotate_hit(mino):
                     mino.rotate('left')
-                    window.mapping(mino, 'drop')
-                else:
-                    window.mapping(mino, 'drop')
+#                    window.mapping(mino, 'drop')
+#                else:
+#                    window.mapping(mino, 'drop')
+                ghost.update()
+                window.g_hard_drop()
+                window.mapping(mino, 'drop')
 
             if event.key == K_LSHIFT:
                 if not hold:
                     window.mapping(mino, 'clear')
+                    window.mapping(ghost, 'clear')
                     if mino.held_already():
                         mino = None
                         mino = Mino('hold')
@@ -548,37 +666,21 @@ while True:
 
             if event.key == K_UP:
                 if window.hard_drop():
+                    ghost = None
                     fixed = True
                     hold = False
 
-#            if event.key == K_DOWN:
-#                if not window.bottom_hit(mino, 'drop'):
-#                    window.mapping(mino, 'clear')
-#                    mino.control('down')
-#                    window.mapping(mino, 'drop')
-#                else:
-##                    if first_collision == False:
-##                        first_collision = True
-##                    else:
-##                        mino.fix_time = 2
-#                    if mino.fix_check('count', time_passed):
-##                    if mino.fix_check('count'):
-#                        window.mapping(mino, 'fix')
-#                        window.line_check()
-#                        window.mapping(mino, 'line_clear')
-#                        fixed = True
-#                        hold = False
+            if event.key == K_g:
+                if window.g_hard_drop():
+                    print('g')
+#                    fixed = True
+#                    hold = False
 
-#            if event.key == K_LEFT:
-#                if not window.left_hit(mino):
-#                    window.mapping(mino, 'clear')
-#                    mino.control('left')
-#                    window.mapping(mino, 'drop')
+#    if window.g_hard_drop():
+#        print('g')
+#    ghost.update()
+#    ghost.hard_drop()
+#    window.mapping(ghost, 'ghost')
 
-#            if event.key == K_RIGHT:
-#                if not window.right_hit(mino):
-#                    window.mapping(mino, 'clear')
-#                    mino.control('right')
-#                    window.mapping(mino, 'drop')
     window.draw(screen)
     pygame.display.update()
