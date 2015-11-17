@@ -1,8 +1,6 @@
-# from random import randint
 import random
 import pygame
 import sys
-from queue import Queue
 from pygame.locals import *
 import copy
 
@@ -23,7 +21,7 @@ class Mino:
             Mino.next1.append(Mino.next2.pop(0)) #  next2からnext1へブロック１つを移す
         elif process == 'hold':
             self.pattern = Mino.hold1
-        self.loc = [6, 3]  # mino配列のfield配列内での位置を表す[x, y]
+        self.loc = [6, 0]  # mino配列のfield配列内での位置を表す[x, y]
         self.state = [0, 0]  # [今の状態, 移行したい状態]
 
     def create(self):
@@ -281,20 +279,6 @@ class Window:
             else:
                 self.block_img[6].set_alpha(255)
                 screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
-#        elif code == 2 or code == 12 or code == -2:
-#            screen.blit(self.block_img[1], (left_margin + x * block_size, bottom_margin + y * block_size))
-#        elif code == 3 or code == 13 or code == -3:
-#            screen.blit(self.block_img[2], (left_margin + x * block_size, bottom_margin + y * block_size))
-#        elif code == 4 or code == 14 or code == -4:
-#            screen.blit(self.block_img[3], (left_margin + x * block_size, bottom_margin + y * block_size))
-#        elif code == 5 or code == 15 or code == -5:
-#            screen.blit(self.block_img[4], (left_margin + x * block_size, bottom_margin + y * block_size))
-#        elif code == 6 or code == 16 or code == -6:
-#            screen.blit(self.block_img[5], (left_margin + x * block_size, bottom_margin + y * block_size))
-#        elif code == 7 or code == 17 or code == -7:
-#            screen.blit(self.block_img[6], (left_margin + x * block_size, bottom_margin + y * block_size))
-#        elif code == 0:
-#            screen.blit(self.block_img[8], (left_margin + x * block_size, bottom_margin + y * block_size))
 
     def load_image(self):
         self.block_img = []
@@ -422,7 +406,6 @@ class Window:
             if not window.bottom_hit(mino, 'drop'):
                 window.mapping(mino, 'clear')
                 mino.control('down')
-#                window.mapping(mino, 'drop')
             else:
                 hard_flag = False
                 window.mapping(mino, 'fix')
@@ -440,56 +423,18 @@ class Window:
             else:
                 hard_flag = False
                 window.mapping(ghost, 'ghost')
-#                window.line_check()
-#                window.mapping(mino, 'line_clear')
         return True
 
-#            else:
-#                hard_flag = False
-#                window.mapping(ghost, 'ghost')
-#                window.line_check()
-#                window.mapping(ghost, 'line_clear')
-#            return True
-
-#    def ghost(self):
-#        ghost_flag = True
-#        while ghost_flag:
-#            if not window.bottom_hit(ghost, 'drop'):
-#                window.mapping(ghost, 'clear')
-#                mino.control('down')
-#                window.mapping(ghost, 'drop')
-#            else:
-#                window.mapping(ghost, 'ghost')
-#                ghost_flag = False
-#    #                window.line_check()
-#    #                window.mapping(ghost, 'line_clear')
 
 class Ghost:
     def __init__(self):
-#        self.loc = copy.deepcopy(mino.loc)
-#        self.loc[1] = copy.deepcopy(mino.loc[1]) + 5
-#        self.pattern = copy.deepcopy(mino.pattern)
         self.loc = copy.deepcopy(mino.loc)
         self.pattern = copy.deepcopy(mino.pattern)
-#        self.loc[1] = copy.deepcopy(mino.loc[1])
-#        self.hard_drop()
-#        Window.g_hard_drop(self)
 
     def update(self):
         self.loc = copy.deepcopy(mino.loc)
-#        self.loc[1] = copy.deepcopy(mino.loc[1])
         self.pattern = copy.deepcopy(mino.pattern)
 
-#    def hard_drop(self):
-#        hard_flag = True
-#        while hard_flag:
-#            if window.bottom_hit(self, 'drop'):
-#                window.mapping(self, 'clear')
-#                window.mapping(self, 'ghost')
-#                break
-#            window.mapping(self, 'clear')
-#            self.loc[1] += 1
-#            window.mapping(self, 'ghost')
 
     def control(self, direct):
         if direct == 'left':
@@ -512,12 +457,9 @@ ghost = Ghost()
 window.g_hard_drop()
 
 window.mapping(mino, 'drop')
-#ghost = copy.deepcopy(mino)
-#ghost = copy.copy(mino)
-#window.ghost()
 
 fixed = False
-hold = False
+hold_flag = False
 # キー入力用カウンタ
 l_cnt = 0
 r_cnt = 0
@@ -530,15 +472,12 @@ clock = pygame.time.Clock()
 collision_flag = False
 
 while True:
-#    window.ghost()
 
     time_passed = clock.tick(60)
-#    print(time_passed)
 
     if fixed:
         mino = Mino('drop')
         ghost = Ghost()
-#        ghost = copy.copy(mino)
         window.g_hard_drop()
         window.mapping(mino, 'drop')
         fixed = False
@@ -562,12 +501,9 @@ while True:
             window.line_check()
             window.mapping(mino, 'line_clear')
             fixed = True
-            hold = False
+            hold_flag = False
             collision_flag = False
     # 自由落下ここまで
-
-#    ghost.update()
-#    window.mapping(ghost, 'clear')
 
     pressed = pygame.key.get_pressed()
     if pressed[K_DOWN]:
@@ -576,17 +512,15 @@ while True:
             if not window.bottom_hit(mino, 'drop'):
                 window.mapping(mino, 'clear')
                 mino.control('down')
-#                window.mapping(ghost, 'clear')
                 ghost.update()
                 window.g_hard_drop()
                 window.mapping(mino, 'drop')
-#                window.mapping(ghost, 'ghost')
             else:
                 window.mapping(mino, 'fix')
                 window.line_check()
                 window.mapping(mino, 'line_clear')
                 fixed = True
-                hold = False
+                hold_flag = False
             d_cnt = 0
 
     if pressed[K_LEFT]:
@@ -594,7 +528,6 @@ while True:
         if l_cnt >= threshold:
             if not window.left_hit(mino):
                 window.mapping(mino, 'clear')
-#                window.mapping(ghost, 'clear')
                 mino.control('left')
 
                 window.mapping(ghost, 'clear')
@@ -602,7 +535,6 @@ while True:
                 window.g_hard_drop()
 
                 window.mapping(mino, 'drop')
-#                window.mapping(ghost, 'ghost')
             l_cnt = 0
 
     if pressed[K_RIGHT]:
@@ -615,7 +547,6 @@ while True:
                 ghost.update()
                 window.g_hard_drop()
                 window.mapping(mino, 'drop')
-#                window.mapping(ghost, 'ghost')
             r_cnt = 0
 
     for event in pygame.event.get():
@@ -630,9 +561,6 @@ while True:
                 mino.rotate('left')
                 if window.rotate_hit(mino):
                     mino.rotate('right')
-#                    window.mapping(mino, 'drop')
-#                else:
-#                    window.mapping(mino, 'drop')
                 ghost.update()
                 window.g_hard_drop()
                 window.mapping(mino, 'drop')
@@ -644,43 +572,31 @@ while True:
                 mino.rotate('right')
                 if window.rotate_hit(mino):
                     mino.rotate('left')
-#                    window.mapping(mino, 'drop')
-#                else:
-#                    window.mapping(mino, 'drop')
                 ghost.update()
                 window.g_hard_drop()
                 window.mapping(mino, 'drop')
 
             if event.key == K_LSHIFT:
-                if not hold:
+                if not hold_flag:
                     window.mapping(mino, 'clear')
                     window.mapping(ghost, 'clear')
                     if mino.held_already():
-                        mino = None
+#                        mino = None
+#                        ghost = None
                         mino = Mino('hold')
                     else:
-                        mino = None
+#                        mino = None
+#                        ghost = None
                         mino = Mino('drop')
-                    hold = True
+                    hold_flag = True
+                    ghost.update()
+                    window.g_hard_drop()
                     window.mapping(mino, 'drop')
 
             if event.key == K_UP:
                 if window.hard_drop():
-                    ghost = None
                     fixed = True
-                    hold = False
-
-            if event.key == K_g:
-                if window.g_hard_drop():
-                    print('g')
-#                    fixed = True
-#                    hold = False
-
-#    if window.g_hard_drop():
-#        print('g')
-#    ghost.update()
-#    ghost.hard_drop()
-#    window.mapping(ghost, 'ghost')
+                    hold_flag = False
 
     window.draw(screen)
     pygame.display.update()
