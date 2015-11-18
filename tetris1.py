@@ -117,11 +117,11 @@ class Mino:
             Mino.hold2 = pattern
             return False
 
-    def drop(self, time):
-        Mino.drop_time += time
-        if Mino.drop_time >= 500:
-            Mino.drop_time = 0
-            return True
+#    def drop(self, time):
+#        Mino.drop_time += time
+#        if Mino.drop_time >= 500:
+#            Mino.drop_time = 0
+#            return True
 
 
 class Window:
@@ -159,7 +159,6 @@ class Window:
         self.load_image()
         self.shift_loc = [0, 0]  # 壁蹴り時のシフト幅[x, y]
         self.lines = []  # 消去するライン
-        self.key_down_time = 0
 
     def mapping(self, mino, process):
         field_x = mino.loc[0]
@@ -169,11 +168,15 @@ class Window:
         end_y = field_y + pattern_len
 
         if process == 'line_clear':
+            clear_flag = False
             for y in self.lines:
                 del Window._field[y]
+                clear_flag = True
             for y in self.lines:
                 Window._field.insert(2, [99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 99])
 #            return 0
+            if clear_flag:
+                clear_sound.play()
 
         if process == 'clear_effect':
             if len(self.lines) == 0:
@@ -233,11 +236,9 @@ class Window:
             if code == -1:
                 self.block_img[0].set_alpha(100)
                 screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
-#            self.block_img[0].fill((255,255,255))
             else:
                 self.block_img[0].set_alpha(255)
                 screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
-#            screen.blit(self.block_img[0], (left_margin + x * block_size, bottom_margin + y * block_size))
 
         elif code == 2 or code == 12 or code == -2:
             if code == -2:
@@ -410,7 +411,7 @@ class Window:
                 break
 
 
-    def hard_drop(self, time_passed):
+    def hard_drop(self):
         hard_flag = True
         while hard_flag:
             if not window.bottom_hit(mino, 'drop'):
@@ -420,16 +421,6 @@ class Window:
                 hard_flag = False
                 window.mapping(mino, 'fix')
                 window.line_check()
-                #
-                while True:
-                    if window.mapping(mino, 'clear_effect'):
-                        break
-                    time_passed += time_passed
-                    if time_passed >= 100000:
-                        break
-                    window.draw(screen)
-                    pygame.display.update()
-                #
                 window.mapping(mino, 'line_clear')
         return True
 
@@ -490,11 +481,26 @@ threshold = 1
 clock = pygame.time.Clock()
 
 collision_flag = False
+drop_time = 0
+fix_time = 0
+fix_flag = False
 
+# サウンドの読み込み
+fix_sound = pygame.mixer.Sound('data/fix.wav')
+hard_sound = pygame.mixer.Sound('data/hard.wav')
+rotate_sound = pygame.mixer.Sound('data/rotate.wav')
+hold_sound = pygame.mixer.Sound('data/hold.wav')
+clear_sound = pygame.mixer.Sound('data/clear.wav')
+control_sound = pygame.mixer.Sound('data/control.wav')
+
+pygame.mixer.music.load('data/bgm01.ogg')
+#pygame.mixer.music.play(-1)
 
 while True:
 
-    time_passed = clock.tick(60)
+    time_passed = clock.tick_busy_loop(60)
+    fps = clock.get_fps()
+#    print(time_passed, fps)
 
     if fixed:
         mino = Mino('drop')
@@ -507,7 +513,7 @@ while True:
     pygame.display.update()
 
     # 自由落下
-    if mino.drop(time_passed):
+    if drop_time >= 1000:
         if not window.bottom_hit(mino, 'drop'):
             window.mapping(mino, 'clear')
             mino.control('down')
@@ -515,27 +521,60 @@ while True:
             window.g_hard_drop()
             window.mapping(mino, 'drop')
         else:
-            collision_flag = True
-
-    if collision_flag:
-            window.mapping(mino, 'fix')
-            window.line_check()
-            #
-            while True:
-                if window.mapping(mino, 'clear_effect'):
-                    break
-                time_passed += time_passed
-                if time_passed >= 100000:
-                    break
-                window.draw(screen)
-                pygame.display.update()
-                #
-            window.mapping(mino, 'line_clear')
-            fixed = True
-            hold_flag = False
-            collision_flag = False
+            fix_flag = True
+#            window.mapping(mino, 'fix')
+#            window.line_check()
+##            #
+##            while True:
+##                if window.mapping(mino, 'clear_effect'):
+##                    break
+##                time_passed += time_passed
+##                if time_passed >= 100000:
+##                    break
+##                window.draw(screen)
+##                pygame.display.update()
+##                #
+#            window.mapping(mino, 'line_clear')
+#            fixed = True
+#            hold_flag = False
+#            collision_flag = False
+        drop_time = 0
+    drop_time += time_passed
     # 自由落下ここまで
 
+    # 固定処理 フラグがTrueのときだけ行う．１秒経ったら固定
+    if fix_flag:
+        if fix_time >= 500:
+            if not window.bottom_hit(mino, 'drop'):
+                fix_time = 0
+                fix_flag = False
+            else:
+                window.mapping(mino, 'fix')
+
+                ####固定描画処理####
+                ####固定音処理####
+                fix_sound.play()
+
+                window.line_check()
+                #            #
+                #            while True:
+                #                if window.mapping(mino, 'clear_effect'):
+                #                    break
+                #                time_passed += time_passed
+                #                if time_passed >= 100000:
+                #                    break
+                #                window.draw(screen)
+                #                pygame.display.update()
+                #                #
+                window.mapping(mino, 'line_clear')
+                fixed = True
+                hold_flag = False
+                collision_flag = False
+                fix_time = 0
+                fix_flag = False
+        fix_time += time_passed
+        print(fix_time)
+    # 固定処理ここまで
 
     pressed = pygame.key.get_pressed()
     if pressed[K_DOWN]:
@@ -548,21 +587,12 @@ while True:
                 window.g_hard_drop()
                 window.mapping(mino, 'drop')
             else:
-                window.mapping(mino, 'fix')
-                window.line_check()
-                #
-                while True:
-                    if window.mapping(mino, 'clear_effect'):
-                        break
-                    time_passed += time_passed
-                    if time_passed >= 100000:
-                        break
-                    window.draw(screen)
-                    pygame.display.update()
-                #
-                window.mapping(mino, 'line_clear')
-                fixed = True
-                hold_flag = False
+                fix_flag = True
+#                window.mapping(mino, 'fix')
+#                window.line_check()
+#                window.mapping(mino, 'line_clear')
+#                fixed = True
+#                hold_flag = False
             d_cnt = 0
 
     if pressed[K_LEFT]:
@@ -597,6 +627,7 @@ while True:
                 sys.quit()
 
             if event.key == K_z:
+                rotate_sound.play()
                 window.mapping(mino, 'clear')
                 window.mapping(ghost, 'clear')
 
@@ -608,6 +639,7 @@ while True:
                 window.mapping(mino, 'drop')
 
             if event.key == K_x:
+                rotate_sound.play()
                 window.mapping(mino, 'clear')
                 window.mapping(ghost, 'clear')
 
@@ -620,6 +652,7 @@ while True:
 
             if event.key == K_LSHIFT:
                 if not hold_flag:
+                    hold_sound.play()
                     window.mapping(mino, 'clear')
                     window.mapping(ghost, 'clear')
                     if mino.held_already():
@@ -636,7 +669,8 @@ while True:
                     window.mapping(mino, 'drop')
 
             if event.key == K_UP:
-                if window.hard_drop(time_passed):
+                hard_sound.play()
+                if window.hard_drop():
                     fixed = True
                     hold_flag = False
 
