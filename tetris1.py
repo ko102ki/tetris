@@ -6,11 +6,11 @@ import copy
 
 
 class Mino:
-    next1 = [] #  ネクストブロック7種を入れる
-    next2 = [] #  ネクストブロック7種を入れる
+    next1 = []  # ネクストブロック7種を入れる
+    next2 = []  # ネクストブロック7種を入れる
 
-    hold1 = [] #  ホールド時にhold2の内容を移す
-    hold2 = [] #  落下中のminoのパターンを入れておく
+    hold1 = []  # ホールド時にhold2の内容を移す
+    hold2 = []  # 落下中のminoのパターンを入れておく
 
     drop_time = 0
 
@@ -18,7 +18,7 @@ class Mino:
         self.create()
         if process == 'drop':
             self.pattern = Mino.next1.pop(0)
-            Mino.next1.append(Mino.next2.pop(0)) #  next2からnext1へブロック１つを移す
+            Mino.next1.append(Mino.next2.pop(0))  # next2からnext1へブロック１つを移す
         elif process == 'hold':
             self.pattern = Mino.hold1
         self.loc = [6, 0]  # mino配列のfield配列内での位置を表す[x, y]
@@ -26,7 +26,7 @@ class Mino:
 
     def create(self):
         if len(Mino.next1) == 0:
-            #next1 next2ともに空なので両方にappend
+            # next1 next2ともに空なので両方にappend
             index_list = [1, 2, 3, 4, 5, 6, 7]
             random.shuffle(index_list)
             for i in index_list:
@@ -38,13 +38,14 @@ class Mino:
                 pattern = self.pattern_create(i)
                 Mino.next2.append(pattern)
         elif len(Mino.next2) == 0:
-            #next2が空なのでnext2にappend
+            # next2が空なのでnext2にappend
             index_list = [1, 2, 3, 4, 5, 6, 7]
             for i in index_list:
                 pattern = self.pattern_create(i)
                 Mino.next2.append(pattern)
 
-    def pattern_create(self, index):
+    @staticmethod
+    def pattern_create(index):
         if index == 1:  # I
             return ([[0, 0, 0, 0],
                      [1, 1, 1, 1],
@@ -102,6 +103,7 @@ class Mino:
             self.loc[1] += 1
 
     def held_already(self):
+        mino_index = 0
         for y in self.pattern:
             for x in y:
                 if x != 0:
@@ -150,9 +152,13 @@ class Window:
     _field_width = 16
 
     def __init__(self):
+        self.block_img = []
         self.load_image()
         self.shift_loc = [0, 0]  # 壁蹴り時のシフト幅[x, y]
         self.lines = []  # 消去するライン
+        self.score = 0
+        self.ren = 0
+        self.ren_credit = None
 
     def mapping(self, mino, process):
         field_x = mino.loc[0]
@@ -166,18 +172,14 @@ class Window:
             for y in self.lines:
                 del Window._field[y]
                 cl_flag = True
-            for y in self.lines:
+            for y in range(len(self.lines)):
                 Window._field.insert(2, [99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 99])
-#            return 0
             if cl_flag:
                 clear_sound.play()
 
         if process == 'clear_effect':
-#            if len(self.lines) == 0:
-#                return True
             for y in self.lines:
                 self._field[y] = [99, 99, 99, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 99, 99, 99]
-#            return False
 
         for y in range(field_y, end_y):
             for x in range(field_x, end_x):
@@ -194,33 +196,51 @@ class Window:
                     elif process == 'ghost':
                         Window._field[y][x] = -1*code
 
-
     def draw(self, screen):
+        field_left_margin = cell * 4  # +3が実際の表示領域
+        field_top_margin = cell * 1  # +2が実際の表示領域
+
+        next_left_margin = cell * 19
+        next_top_margin = cell * 5
+
+        hold_left_margin = cell * 1
+        hold_top_margin = cell * 5
+
         screen.fill((0, 0, 0))
+        screen.blit(next_title, (next_left_margin, next_top_margin - cell * 2))
+        screen.blit(hold, (hold_left_margin, hold_top_margin - cell * 2))
+        screen.blit(score_title, (hold_left_margin, hold_top_margin + cell * 3))
+        score_num = game_font.render(str(window.score), True, (255, 255, 255))
+        screen.blit(score_num, (hold_left_margin, hold_top_margin + cell * 4))
+
+        # REN描画用
+        if self.ren_credit:
+            screen.blit(self.ren_credit, (hold_left_margin, hold_top_margin + cell * 6))
+        else:
+            pass
 
         # field描画用
         for y in range(2, Window._field_height - 2):
             for x in range(2, Window._field_width - 2):
                 code = Window._field[y][x]
-                self.blit_img(code, x, y, 72, 24)
+                self.blit_img(code, x, y, field_left_margin, field_top_margin)
 
         # next描画用
-        nexts_len = len(Mino.next1)
+        nexts_len = len(Mino.next1) - 2
         for z in range(nexts_len):
             next_len = len(Mino.next1[z])
             for y in range(next_len):
                 for x in range(next_len):
                     if Mino.next1[z][y][x]:
                         code = Mino.next1[z][y][x]
-                        self.blit_img(code, x, y, 450, 24+80*z)
+                        self.blit_img(code, x, y, next_left_margin, next_top_margin + 96 * z)
 
         # hold描画用
         for y in range(len(Mino.hold2)):
             for x in range(len(Mino.hold2)):
                 if Mino.hold2[y][x]:
                     code = Mino.hold2[y][x]
-                    self.blit_img(code, x, y, 24, 24)
-
+                    self.blit_img(code, x, y, hold_left_margin, hold_top_margin)
 
     def blit_img(self, code, x, y, left_margin, bottom_margin):
         block_size = 24
@@ -284,9 +304,7 @@ class Window:
         elif code == 100:
             screen.blit(self.block_img[8], (left_margin + x * block_size, bottom_margin + y * block_size))
 
-
     def load_image(self):
-        self.block_img = []
         self.block_img.append(pygame.image.load('data/i.bmp'))
         self.block_img.append(pygame.image.load('data/o.bmp'))
         self.block_img.append(pygame.image.load('data/s.bmp'))
@@ -297,7 +315,8 @@ class Window:
         self.block_img.append(pygame.image.load('data/w.bmp'))
         self.block_img.append(pygame.image.load('data/c.bmp'))
 
-    def left_hit(self, mino):
+    @staticmethod
+    def left_hit(mino):
         pattern_len = len(mino.pattern)
         for x in range(pattern_len):
             for y in range(pattern_len):
@@ -308,7 +327,8 @@ class Window:
                         return True
         return False
 
-    def right_hit(self, mino):
+    @staticmethod
+    def right_hit(mino):
         pattern_len = len(mino.pattern)
         for x in range(pattern_len - 1, -1, -1):
             for y in range(pattern_len):
@@ -319,7 +339,8 @@ class Window:
                         return True
         return False
 
-    def bottom_hit(self, mino, process):
+    @staticmethod
+    def bottom_hit(mino, process):
         pattern_len = len(mino.pattern)
 
         if process == 'drop':
@@ -332,7 +353,8 @@ class Window:
                             return True
             return False
 
-    def rotate_hit(self, mino):
+    @staticmethod
+    def rotate_hit(mino):
         pattern_len = len(mino.pattern)
         collision_list = []
         shift_list = []
@@ -394,7 +416,6 @@ class Window:
             collision_list = []
         return True
 
-
     def line_check(self):
         self.lines = []
         for y in range(Window._field_height - 4, 2, -1):
@@ -404,13 +425,14 @@ class Window:
             if zero_cnt == 10:
                 break
 
-
     def hard_drop(self):
         hard_flag = True
         while hard_flag:
             if not window.bottom_hit(mino, 'drop'):
                 window.mapping(mino, 'clear')
                 mino.control('down')
+                # 自分が動かしたマス目分だけスコアに加算
+                self.score += 1
             else:
                 hard_flag = False
 #                window.mapping(mino, 'fix')
@@ -418,7 +440,8 @@ class Window:
 #                window.mapping(mino, 'line_clear')
         return True
 
-    def g_hard_drop(self):
+    @staticmethod
+    def g_hard_drop():
         hard_flag = True
         while hard_flag:
             if not window.bottom_hit(ghost, 'drop'):
@@ -430,6 +453,25 @@ class Window:
                 window.mapping(ghost, 'ghost')
         return True
 
+    def score_count(self):
+        cleared_lines = len(self.lines)
+        score = 0
+        if cleared_lines == 1:
+            score = 100
+        elif cleared_lines == 2:
+            score = 300
+        elif cleared_lines == 3:
+            score = 500
+        elif cleared_lines == 4:
+            score = 800
+        self.score += score
+
+    def ren_count(self):
+        if self.ren >= 1:
+            self.score += self.ren * 50
+            ren_char = str(self.ren) + 'REN'
+            self.ren_credit = game_font.render(ren_char, True, (255, 255, 255))
+
 
 class Ghost:
     def __init__(self):
@@ -440,7 +482,6 @@ class Ghost:
         self.loc = copy.deepcopy(mino.loc)
         self.pattern = copy.deepcopy(mino.pattern)
 
-
     def control(self, direct):
         if direct == 'left':
             self.loc[0] -= 1
@@ -449,14 +490,16 @@ class Ghost:
         if direct == 'down':
             self.loc[1] += 1
 
+
 # mainループ
+
+# ブロック1つ(1マス)の大きさ
+cell = 24
+
 # pygame初期化
 pygame.init()
-screen_size = (600, 600)
+screen_size = (cell * 27, cell * 27)
 screen = pygame.display.set_mode(screen_size)
-sys_font = pygame.font.SysFont(None, 100)
-title1 = sys_font.render('Space to', True, (255,255,255))
-title2 = sys_font.render('Start!', True, (255,255,255))
 
 # インスタンス生成
 mino = Mino('drop')
@@ -465,20 +508,29 @@ ghost = Ghost()
 window.g_hard_drop()
 window.mapping(mino, 'drop')
 
+# フォント準備
+sys_font = pygame.font.SysFont(None, 100)
+game_font = pygame.font.SysFont(None, 40)
+title1 = sys_font.render('Space to', True, (255, 255, 255))
+title2 = sys_font.render('Start!', True, (255, 255, 255))
+score_title = game_font.render('SCORE', True, (255, 255, 255))
+hold = game_font.render('HOLD', True, (255, 255, 255))
+next_title = game_font.render('NEXT', True, (255, 255, 255))
+
 # キー入力用カウンタ
 left_count = 0
 right_count = 0
 down_count = 0
 down_threshold = 4
 side_threshold = 5
-#pygame.key.set_repeat(70, 10)
+# pygame.key.set_repeat(70, 10)
 
 # Timer
 clock = pygame.time.Clock()
 
 # BGM
 pygame.mixer.music.load('data/bgm01_intro.ogg')
-#pygame.mixer.music.set_volume(1)
+# pygame.mixer.music.set_volume(1)
 
 # サウンドの読み込み
 fix_sound = pygame.mixer.Sound('data/fix.wav')
@@ -486,13 +538,14 @@ hard_sound = pygame.mixer.Sound('data/hard.wav')
 rotate_sound = pygame.mixer.Sound('data/rotate.wav')
 hold_sound = pygame.mixer.Sound('data/hold.wav')
 clear_sound = pygame.mixer.Sound('data/clear.wav')
-#control_sound = pygame.mixer.Sound('data/control.wav')
+# control_sound = pygame.mixer.Sound('data/control.wav')
 
 # Flag
 start = False
 fixed = False
 holdable = True
 fixing = False
+ren_flag = False
 drop_time = 0
 fix_time = 0
 
@@ -509,13 +562,11 @@ while True:
             if event.type == KEYDOWN:
                 if event.key == K_SPACE:
                     start = True
-                    pygame.mixer.music.play(1)
-#                    pygame.mixer.music.queue('data/bgm01.ogg')
-#                    pygame.mixer.music.play(-1)
+#                    pygame.mixer.music.play(1)
 
-    if not pygame.mixer.music.get_busy():
-        pygame.mixer.music.load('data/bgm01.ogg')
-        pygame.mixer.music.play(-1)
+#    if not pygame.mixer.music.get_busy():
+#        pygame.mixer.music.load('data/bgm01.ogg')
+#        pygame.mixer.music.play(-1)
     if fixed:
         mino = Mino('drop')
         ghost = Ghost()
@@ -547,6 +598,8 @@ while True:
             if not window.bottom_hit(mino, 'drop'):
                 window.mapping(mino, 'clear')
                 mino.control('down')
+                # 自分が動かしたマス目分だけスコアに加算
+                window.score += 1
                 ghost.update()
                 window.g_hard_drop()
                 window.mapping(mino, 'drop')
@@ -581,7 +634,7 @@ while True:
     for event in pygame.event.get():
         if event.type == KEYDOWN:
             if event.key == K_ESCAPE:
-                sys.quit()
+                sys.exit()
 
             if event.key == K_z:
                 rotate_sound.play()
@@ -615,12 +668,8 @@ while True:
                     window.mapping(mino, 'clear')
                     window.mapping(ghost, 'clear')
                     if mino.held_already():
-#                        mino = None
-#                        ghost = None
                         mino = Mino('hold')
                     else:
-#                        mino = None
-#                        ghost = None
                         mino = Mino('drop')
                     holdable = False
                     ghost.update()
@@ -642,22 +691,32 @@ while True:
                 window.mapping(mino, 'fix')
                 window.line_check()
 
-                ####固定音処理####
+                # 固定音処理
                 fix_sound.play()
 
-                ####固定描画処理####
+                # 固定描画処理
                 if window.lines:
+                    window.score_count()
                     window.mapping(mino, 'clear_effect')
                     window.draw(screen)
                     pygame.display.update()
                     pygame.time.wait(500)
-
                     window.mapping(mino, 'line_clear')
+                    if not ren_flag:
+                        ren_flag = True
+                    elif ren_flag:
+                        window.ren += 1
+                elif not window.lines and ren_flag:
+                    ren_flag = False
+                    window.ren = 0
+                    window.ren_credit = None
+                window.ren_count()
                 fixed = True
                 holdable = True
                 fixing = False
                 fix_time = 0
         fix_time += time_passed
-        # 固定処理ここまで
+    # 固定処理ここまで
+
 
 
