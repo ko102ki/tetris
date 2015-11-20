@@ -103,19 +103,19 @@ class Block:
             self.loc[1] += 1
 
     def held_already(self):
-        mino_index = 0
+        block_index = 0
         for y in self.pattern:
             for x in y:
                 if x != 0:
-                    mino_index = x
+                    block_index = x
                     break
         if Block.hold2:
             Block.hold1 = Block.hold2
-            pattern = self.pattern_create(mino_index)
+            pattern = self.pattern_create(block_index)
             Block.hold2 = pattern
             return True
         else:
-            pattern = self.pattern_create(mino_index)
+            pattern = self.pattern_create(block_index)
             Block.hold2 = pattern
             return False
 
@@ -159,6 +159,7 @@ class Window:
         self.score = 0
         self.ren = 0
         self.ren_credit = None
+        self.t_spin_credit = None
 
     def mapping(self, block, process):
         field_x = block.loc[0]
@@ -213,6 +214,12 @@ class Window:
         score_num = game_font.render(str(window_instance.score), True, (255, 255, 255))
         screen.blit(score_num, (hold_left_margin, hold_top_margin + cell * 4))
 
+        # T-spin描画用
+        if self.t_spin_credit:
+            screen.blit(self.t_spin_credit, (hold_left_margin, hold_top_margin + cell * 7))
+        else:
+            pass
+
         # REN描画用
         if self.ren_credit:
             screen.blit(self.ren_credit, (hold_left_margin, hold_top_margin + cell * 6))
@@ -226,11 +233,11 @@ class Window:
                 self.blit_img(code, x, y, field_left_margin, field_top_margin)
 
         # next描画用
-        nexts_len = len(Block.next1) - 2
-        for z in range(nexts_len):
-            next_len = len(Block.next1[z])
-            for y in range(next_len):
-                for x in range(next_len):
+        next1_len = len(Block.next1) - 2
+        for z in range(next1_len):
+            block_len = len(Block.next1[z])
+            for y in range(block_len):
+                for x in range(block_len):
                     if Block.next1[z][y][x]:
                         code = Block.next1[z][y][x]
                         self.blit_img(code, x, y, next_left_margin, next_top_margin + 96 * z)
@@ -412,9 +419,54 @@ class Window:
                 block.loc[0] += shift_axis[0]
                 block.loc[1] += shift_axis[1]
                 block.state[0] = block.state[1]
+#                spin_type = Window.t_spin_check(shift_axis)
                 return False
             collision_list = []
         return True
+
+    def t_spin_check(self):
+        surrounding_list = []  # Tミノの周囲の要素を入れる
+        pattern_len = len(block_instance.pattern)
+        for y in range(pattern_len):
+            for x in range(pattern_len):
+                field_x = block_instance.loc[0] + x
+                field_y = block_instance.loc[1] + y
+                # Tミノの周囲の要素を調べる
+                # Tミノではない要素かつ0でない(空のマスの)要素
+                if Window._field[field_y][field_x] != 7 and Window._field[field_y][field_x] != 0:
+                    surrounding_list.append(99)
+                else:
+                    surrounding_list.append(0)
+        if surrounding_list.count(99) == 3 or surrounding_list.count(99) == 5:
+            return True
+
+            """
+        for y in range(3):
+            for x in range(3):
+                self._field[][]
+        block_instance.loc[]
+
+        block_index = 0
+        for y in block_instance.pattern:
+            for x in y:
+                if x != 0:
+                    block_index = x
+                    break
+            if block_index != 0:
+                break
+        if block_index == 7 and axis != [0, 0]:
+            pass
+        if Block.hold2:
+            Block.hold1 = Block.hold2
+            pattern = self.pattern_create(block_index)
+            Block.hold2 = pattern
+            return True
+        else:
+            pattern = self.pattern_create(block_index)
+            Block.hold2 = pattern
+            return False
+        pass
+            """
 
     def line_check(self):
         self.lines = []
@@ -546,6 +598,7 @@ fixed = False
 holdable = True
 fixing = False
 ren_flag = False
+t_spin_flag = False
 drop_time = 0
 fix_time = 0
 
@@ -688,6 +741,19 @@ while True:
             if not window_instance.bottom_hit(block_instance, 'drop'):
                 fix_time = 0
             else:
+                # T-spin判定
+                block_index = 0
+                for y in block_instance.pattern:
+                    for x in y:
+                        if x != 0:
+                            block_index = x
+                            break
+                    if block_index != 0:
+                        break
+                if block_index == 7:
+                    t_spin_flag = window_instance.t_spin_check()
+
+
                 window_instance.mapping(block_instance, 'fix')
                 window_instance.line_check()
 
@@ -696,6 +762,11 @@ while True:
 
                 # 固定描画処理
                 if window_instance.lines:
+                    if t_spin_flag:
+                        t_spin_str = 'T-Spin' + str(len(window_instance.lines))
+                        window_instance.t_spin_credit = game_font.render(t_spin_str, True, (255, 255, 255))
+                        t_spin_flag = False
+
                     window_instance.score_count()
                     window_instance.mapping(block_instance, 'clear_effect')
                     window_instance.draw(screen)
@@ -710,6 +781,8 @@ while True:
                     ren_flag = False
                     window_instance.ren = 0
                     window_instance.ren_credit = None
+                else:
+                    window_instance.t_spin_credit = None
                 window_instance.ren_count()
                 fixed = True
                 holdable = True
