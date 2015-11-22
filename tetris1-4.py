@@ -7,17 +7,13 @@ import copy
 LEFT = 0
 RIGHT = 1
 DOWN = 2
-
 DROP = 0
 CLEAR = 1
 FIX = 2
 GHOST = 3
-
 TITLE = 0
 PLAY = 1
-
-# ブロック1つ(1マス)の大きさ
-CELL = 24
+CELL = 24  # ブロック1つ(1マス)の大きさ
 
 class Block:
 
@@ -131,10 +127,8 @@ class Block:
 
 
 class Field:
-
     field_height = 25
     field_width = 16
-
     def __init__(self):
         self.field = [
                      [99, 99, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 99, 99],
@@ -168,32 +162,23 @@ class Field:
         # 自由落下用変数
         self.fall_interval = 1000
         self.fall_time_sum = 0
-
         # 固定時間設定用変数
         self.fix_time_sum = 0
         self.time_to_fix = 1000
-
+        self.fixing = False
         # 固定用フラグ
         self.fixed = False
-
         # hold用フラグ
         self.hold = False
-
         # T-Spin用フラグ
         self.t_spin_flag = False
-
         # スコア計算用変数
         self.score = 0
-
         # REN用変数,Flag
         self.ren = 0
         self.ren_flag = False
-
         # ラインクリア用フラグ
         self.line_clear_flag = False
-
-        self.ren_credit = None
-        self.t_spin_credit = None
 
     def mapping(self, block, process):
         field_x = block.location[0]
@@ -308,24 +293,25 @@ class Field:
             self.field.insert(2, [99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 99])
 
     def free_fall(self, time):
-        self.fall_time_sum += time
         if self.fall_time_sum >= self.fall_interval:
             if not self.bottom_hit(block_instance):
                 self.mapping(block_instance, CLEAR)
                 block_instance.control(DOWN)
                 self.mapping(block_instance, DROP)
-                self.fall_time_sum = 0
+            else: self.fixing = True
             self.fall_time_sum = 0
+        self.fall_time_sum += time
 
     def soft_drop_fix(self, time):
-        if self.bottom_hit(block_instance):
-            self.fix_time_sum += time
+        if self.fixing:
             if self.fix_time_sum >= self.time_to_fix:
-                if self.bottom_hit(block_instance):
+                if not self.bottom_hit(block_instance):
+                    self.fix_time_sum = 0
+                else:
                     self.t_spin_flag = self.t_spin_check()  # Tスピン判定
                     self.fix()
                     self.fix_time_sum = 0
-                else: self.fix_time_sum = 0
+            self.fix_time_sum += time
 
     def fix(self):
         self.mapping(block_instance, FIX)
@@ -447,27 +433,21 @@ class Draw:
 
     def draw_play(self, time):
         self.screen.fill((0, 0, 0))
-
         self.field_left_margin = CELL * 4  # +3が実際の表示領域
         self.field_top_margin = CELL * 1  # +2が実際の表示領域
-
         next_left_margin = CELL * 19
         next_top_margin = CELL * 5
-
         hold_left_margin = CELL * 1
         hold_top_margin = CELL * 5
-
         self.screen.blit(self.next_title, (next_left_margin, next_top_margin - CELL * 2))
         self.screen.blit(self.hold_title, (hold_left_margin, hold_top_margin - CELL * 2))
         self.screen.blit(self.score_title, (hold_left_margin, hold_top_margin + CELL * 3))
         score_num = self.game_font.render(str(field_instance.score), True, (255, 255, 255))
         self.screen.blit(score_num, (hold_left_margin, hold_top_margin + CELL * 4))
-
         # REN描画用
         if field_instance.ren > 0:
             self.ren_title = self.game_font.render(str(field_instance.ren) + 'REN', True, (255, 255, 255))
             self.screen.blit(self.ren_title, (hold_left_margin, hold_top_margin + CELL * 6))
-
         # T-spin描画用
         if field_instance.t_spin_flag:
             self.display_t_spin = True
@@ -479,13 +459,11 @@ class Draw:
             else:
                 self.display_t_spin = False
                 self.display_time_sum = 0
-
         # field描画用
         for y in range(2, Field.field_height - 2):
             for x in range(2, Field.field_width - 2):
                 code = field_instance.field[y][x]
                 self.blit_img(code, x, y, self.field_left_margin, self.field_top_margin)
-
         # next描画用
         next_len = len(block_instance.next) - 2
         for z in range(next_len):
@@ -495,7 +473,6 @@ class Draw:
                     if block_instance.next[z][y][x]:
                         code = block_instance.next[z][y][x]
                         self.blit_img(code, x, y, next_left_margin, next_top_margin + 96 * z)
-
         # hold描画用
         for y in range(len(block_instance.hold_now)):
             for x in range(len(block_instance.hold_now)):
@@ -588,7 +565,7 @@ class Draw:
 class Player:
     # キー入力用カウンタ
     down_threshold = 2
-    side_threshold = 3
+    side_threshold = 5
     game_state = TITLE
 
     def __init__(self):
@@ -615,6 +592,7 @@ class Player:
                     # 自分が動かしたマス目分だけスコアに加算
                     field_instance.score += 1
                     field_instance.mapping(block_instance, DROP)
+                else: field_instance.fixing = True
                 self.down_count = 0
 
         if pressed[K_LEFT]:
@@ -657,7 +635,7 @@ class Player:
                     else:
                         ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                         field_instance.ghost_mapping() # ゴーストブロックをマッピング
-#                        fix_time = 0
+                        field_instance.fix_time = 0
                     field_instance.mapping(block_instance, DROP)
 
                 if event.key == K_x:
@@ -670,7 +648,7 @@ class Player:
                     else:
                         ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                         field_instance.ghost_mapping() # ゴーストブロックをマッピング
-#                        fix_time = 0
+                        field_instance.fix_time = 0
                     field_instance.mapping(block_instance, DROP)  #ブロックをマッピング
                 if event.key == K_LSHIFT:
                     block_instance.hold()
@@ -688,13 +666,7 @@ class Sound:
         self.clear_sound = pygame.mixer.Sound('data/clear.wav')
         # control_sound = pygame.mixer.Sound('data/control.wav')
 
-#        self.bgm = pygame.mixer.music.load('data/bgm01_intro.ogg')
-        self.bgm = pygame.mixer.music.load('data/bgm.ogg')
-        pygame.mixer.music.play(1)
-
-#    if not pygame.mixer.music.get_busy():
-#        pygame.mixer.music.load('data/bgm01.ogg')
-#        pygame.mixer.music.play(-1)
+        pygame.mixer.music.load('data/bgm01_intro.ogg')
 
 # ゲーム開始前の初期化処理が必要か
 play_init = True
@@ -724,8 +696,13 @@ while True:
             ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
             field_instance.ghost_mapping() # ゴーストブロックをマッピング
             field_instance.mapping(block_instance, DROP)  # フィールドにマッピング
+            pygame.mixer.music.play(1)
             # ゲーム開始前の初期化処理が完了
             play_init = False
+
+        if not pygame.mixer.music.get_busy():
+            pygame.mixer.music.load('data/bgm01_loop.ogg')
+            pygame.mixer.music.play(-1)
 
         if field_instance.fixed:
             block_instance.pop_block()  # ブロックを生成
@@ -737,9 +714,9 @@ while True:
             field_instance.hold = False
 
         time_passed = clock.tick(60)
-        player_instance.key_handler()
-        field_instance.free_fall(time_passed)
-        field_instance.soft_drop_fix(time_passed)
+        player_instance.key_handler()  # キー入力受付
+        field_instance.free_fall(time_passed)  # 自由落下処理
+        field_instance.soft_drop_fix(time_passed)  # 固定処理
         if field_instance.line_clear_flag:
             draw_instance.line_clear()
             pygame.time.wait(500)
