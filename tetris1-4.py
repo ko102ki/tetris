@@ -3,6 +3,7 @@ import pygame
 import sys
 from pygame.locals import *
 import copy
+import threading
 
 LEFT = 0
 RIGHT = 1
@@ -122,8 +123,6 @@ class Block:
         for y in range(pattern_len):
             for x in range(pattern_len):
                 self.pattern[y][x] = pattern_copy[y][x]
-        # 回転時のブロックの位置「location」を記憶
-        self.store_location = self.location
 
 
 class Field:
@@ -157,7 +156,6 @@ class Field:
                      [99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99],
                      [99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99], ]
 
-        self.shift_loc = [0, 0]  # 壁蹴り時のシフト幅[x, y]
         self.clear_lines = []  # 消去するライン
         # 自由落下用変数
         self.fall_interval = 1000
@@ -265,7 +263,8 @@ class Field:
                 block.location[0] += shift_axis[0]
                 block.location[1] += shift_axis[1]
                 block.state[0] = block.state[1]
-#                spin_type = Window.t_spin_check(shift_axis)
+                # 回転後のブロックの位置「location」を記憶
+                self.store_location = copy.deepcopy(block_instance.location)
                 return False
             collision_list = []
         return True
@@ -298,7 +297,8 @@ class Field:
                 self.mapping(block_instance, CLEAR)
                 block_instance.control(DOWN)
                 self.mapping(block_instance, DROP)
-            else: self.fixing = True
+            else:
+                self.fixing = True
             self.fall_time_sum = 0
         self.fall_time_sum += time
 
@@ -308,12 +308,12 @@ class Field:
                 if not self.bottom_hit(block_instance):
                     self.fix_time_sum = 0
                 else:
-                    self.t_spin_flag = self.t_spin_check()  # Tスピン判定
                     self.fix()
                     self.fix_time_sum = 0
             self.fix_time_sum += time
 
     def fix(self):
+        self.t_spin_flag = self.t_spin_check()  # Tスピン判定
         self.mapping(block_instance, FIX)
         sound_instance.fix_sound.play()
         # 消去可能ライン数確認
@@ -325,6 +325,7 @@ class Field:
 #        # 固定されたらT−SpinのフラグをFalseに
 #        self.t_spin_flag = False
         self.fixed = True
+        self.fixing = False
         self.game_over_check()
 
     def hard_drop(self):
@@ -335,53 +336,100 @@ class Field:
         sound_instance.hard_sound.play()
         self.fix()
 
+    def t_spin_check(self):
+        if block_instance.return_now_pattern() == 7:
+            if block_instance.location == self.store_location:
+                surrounding_list = []  # Tミノの周囲の要素を入れる
+                pattern_len = len(block_instance.pattern)
+                top = []  # Tミノの上部の要素を入れる
+                bottom = []  # Tミノの下部の要素を入れる
+                # Tミノの周囲の要素を調べる
+                for y in range(0, pattern_len, 2):
+                    for x in range(0, pattern_len, 2):
+                        field_x = block_instance.location[0] + x
+                        field_y = block_instance.location[1] + y
+                        code = self.field[field_y][field_x]
+                        surrounding_list.append(code)
+                # リストをイテレータに変換
+                iter_list = iter(surrounding_list)
+                # ブロックの回転状態によって上部，下部が異なるのでそれに応じてリストに追加していく（10を超える要素のみ）
+                if block_instance.state[0] == 0:
+                    for i in range(2):
+                        code = next(iter_list)
+                        if code > 10: top.append(code)
+                    for i in range(2):
+                        code = next(iter_list)
+                        if code > 10: bottom.append(code)
+                elif block_instance.state[0] == 1:
+                    for i in range(2):
+                        code = next(iter_list)
+                        if code > 10: bottom.append(code)
+                        code = next(iter_list)
+                        if code > 10: top.append(code)
+                elif block_instance.state[0] == 2:
+                    for i in range(2):
+                        code = next(iter_list)
+                        if code > 10: bottom.append(code)
+                    for i in range(2):
+                        code = next(iter_list)
+                        if code > 10: top.append(code)
+                elif block_instance.state[0] == 3:
+                    for i in range(2):
+                        code = next(iter_list)
+                        if code > 10: top.append(code)
+                        code = next(iter_list)
+                        if code > 10: bottom.append(code)
+                # topとbottom内の要素数に応じてスピンの判定
+                if len(top) == 2 and len(bottom) >= 1:
+                    print('T-Spin')
+                    return True
+                elif len(top) == 1 and len(bottom) == 2:
+                    print('Mini T-Spin')
+                    return True
+                return False
+            return False
+        return False
+
     def ghost_mapping(self):
         while not self.bottom_hit(ghost_instance):
             ghost_instance.control(DOWN)
         self.mapping(ghost_instance, GHOST)
-
-    def t_spin_check(self):
-        if block_instance.return_now_pattern() == 7:
-            surrounding_list = []  # Tミノの周囲の要素を入れる
-            pattern_len = len(block_instance.pattern)
-            # Tミノの周囲の要素を調べる
-            for y in range(0, pattern_len, 2):
-                for x in range(0, pattern_len, 2):
-                    field_x = block_instance.location[0] + x
-                    field_y = block_instance.location[1] + y
-                    code = self.field[field_y][field_x]
-                    if code > 10: surrounding_list.append(99)
-            if surrounding_list.count(99) >= 3 and block_instance.location == block_instance.store_location:
-                return True
-            return False
-        return False
 
     def score_count(self):
         cleared_lines = len(self.clear_lines)
         score = 0
         if cleared_lines == 1:
             if self.t_spin_flag:
+                draw_instance.t_spin_type = 'Single !'
                 print('t-spin1')
                 score = 800
             else:
                 score = 100
         elif cleared_lines == 2:
             if self.t_spin_flag:
+                draw_instance.t_spin_type = 'Double !'
                 print('t-spin2')
                 score = 1200
             else:
                 score = 300
         elif cleared_lines == 3:
             if self.t_spin_flag:
+                draw_instance.t_spin_type = 'Triple !'
                 print('t-spin3')
                 score = 1600
             else:
                 score = 500
         elif cleared_lines == 4:
+            draw_instance.tetris_str_flag = True
+            print('tetris')
             score = 800
+        else:
+            if self.t_spin_flag:
+                draw_instance.t_spin_type = ' '
         if self.ren >= 1:
+            # RENをスコアに加算
             score += self.ren * 50
-            print('ren', self.ren)
+            draw_instance.ren_number = str(self.ren)
         self.score += score
 
     def game_over_check(self):
@@ -406,59 +454,93 @@ class Ghost:
 #        if direction == LEFT: self.location[0] -= 1
 #        if direction == RIGHT: self.location[0] += 1
 
-class Draw:
+class Draw():
     def __init__(self):
         self.block_img = []
         self.load_image()
         screen_size = (CELL * 27, CELL * 27)
         self.screen = pygame.display.set_mode(screen_size)
+
         # フォント準備
-        sys_font = pygame.font.SysFont(None, 80)
+        self.sys_font = pygame.font.SysFont(None, 80)
         self.game_font = pygame.font.SysFont(None, 40)
-        self.title = sys_font.render('Press Space to Start', True, (255, 255, 255))
-        self.score_title = self.game_font.render('SCORE', True, (255, 255, 255))
-        self.hold_title = self.game_font.render('HOLD', True, (255, 255, 255))
-        self.next_title = self.game_font.render('NEXT', True, (255, 255, 255))
-        # T-spinの文字表示時間
-        self.display_time = 2000
-        self.display_time_sum = 0
-        self.display_t_spin = False
+        # TITLE
+        self.title_str = self.sys_font.render('Press Space to Start', True, (255, 255, 255))
+        # PLAY
+        self.score_str = self.game_font.render('SCORE', True, (255, 255, 255))
+        self.hold_str = self.game_font.render('HOLD', True, (255, 255, 255))
+        self.next_str = self.game_font.render('NEXT', True, (255, 255, 255))
+
+        # PLAY用変数
+        self.field_left_margin = CELL * 4  # +3が実際の表示領域
+        self.field_top_margin = CELL * 1  # +2が実際の表示領域
+        self.next_left_margin = CELL * 19
+        self.next_top_margin = CELL * 5
+        self.hold_left_margin = CELL * 1
+        self.hold_top_margin = CELL * 5
+
+        # TETRIS表示用
+        self.tetris_str_flag = False
+        self.tetris_time = 0
+
+        # REN表示用
+        self.ren_number = 0
+        self.ren_time = 0
+
+        # T-spin表示用
+        self.t_spin_type = None
+        self.t_spin_time = 0
+
         # クリアエフェクト表示時間
         self.clear_display_time = 2000
         self.clear_display_time_sum = 0
 
     def draw_title(self):
         self.screen.fill((0, 0, 0))
-        self.screen.blit(self.title, (20, 150))
+        self.screen.blit(self.title_str, (50, 150))
 
     def draw_play(self, time):
         self.screen.fill((0, 0, 0))
-        self.field_left_margin = CELL * 4  # +3が実際の表示領域
-        self.field_top_margin = CELL * 1  # +2が実際の表示領域
-        next_left_margin = CELL * 19
-        next_top_margin = CELL * 5
-        hold_left_margin = CELL * 1
-        hold_top_margin = CELL * 5
-        self.screen.blit(self.next_title, (next_left_margin, next_top_margin - CELL * 2))
-        self.screen.blit(self.hold_title, (hold_left_margin, hold_top_margin - CELL * 2))
-        self.screen.blit(self.score_title, (hold_left_margin, hold_top_margin + CELL * 3))
+        # 各種文字表示
+        self.screen.blit(self.next_str, (self.next_left_margin, self.next_top_margin - CELL * 2))
+        self.screen.blit(self.hold_str, (self.hold_left_margin, self.hold_top_margin - CELL * 2))
+        self.screen.blit(self.score_str, (self.hold_left_margin, self.hold_top_margin + CELL * 3))
+        # SCORE表示
         score_num = self.game_font.render(str(field_instance.score), True, (255, 255, 255))
-        self.screen.blit(score_num, (hold_left_margin, hold_top_margin + CELL * 4))
-        # REN描画用
-        if field_instance.ren > 0:
-            self.ren_title = self.game_font.render(str(field_instance.ren) + 'REN', True, (255, 255, 255))
-            self.screen.blit(self.ren_title, (hold_left_margin, hold_top_margin + CELL * 6))
-        # T-spin描画用
-        if field_instance.t_spin_flag:
-            self.display_t_spin = True
-        if self.display_t_spin:
-            self.display_time_sum += time
-            if self.display_time_sum < self.display_time:
-                self.t_spin_title = self.game_font.render('T-Spin', True, (255, 255, 255))
-                self.screen.blit(self.t_spin_title, (hold_left_margin, hold_top_margin + CELL * 7))
+        self.screen.blit(score_num, (self.hold_left_margin, self.hold_top_margin + CELL * 4))
+
+        # TETRIS描画用
+        if self.tetris_str_flag:
+            if self.tetris_time <= 2000:
+                self.tetris_str = self.game_font.render('TETRIS!', True, (255, 255, 255))
+                self.screen.blit(self.tetris_str, (self.hold_left_margin, self.hold_top_margin + CELL * 5))
             else:
-                self.display_t_spin = False
-                self.display_time_sum = 0
+                self.tetris_time = 0
+                self.tetris_str_flag = False
+            self.tetris_time += time
+
+        # REN描画用
+        if self.ren_number:
+            if self.ren_time <= 2000:
+                self.ren_str = self.game_font.render(self.ren_number + 'REN', True, (255, 255, 255))
+                self.screen.blit(self.ren_str, (self.hold_left_margin, self.hold_top_margin + CELL * 6))
+            else:
+                self.ren_time = 0
+                self.ren_number = 0
+            self.ren_time += time
+
+        # T-spin描画用
+        if self.t_spin_type:
+            if self.t_spin_time <= 2000:
+                self.t_spin_str1 = self.game_font.render('T-Spin', True, (255, 255, 255))
+                self.t_spin_str2 = self.game_font.render(self.t_spin_type, True, (255, 255, 255))
+                self.screen.blit(self.t_spin_str1, (self.hold_left_margin, self.hold_top_margin + CELL * 7))
+                self.screen.blit(self.t_spin_str2, (self.hold_left_margin, self.hold_top_margin + CELL * 8))
+            else:
+                self.t_spin_time = 0
+                self.t_spin_type = None
+            self.t_spin_time += time
+
         # field描画用
         for y in range(2, Field.field_height - 2):
             for x in range(2, Field.field_width - 2):
@@ -472,15 +554,15 @@ class Draw:
                 for x in range(block_len):
                     if block_instance.next[z][y][x]:
                         code = block_instance.next[z][y][x]
-                        self.blit_img(code, x, y, next_left_margin, next_top_margin + 96 * z)
+                        self.blit_img(code, x, y, self.next_left_margin, self.next_top_margin + 96 * z)
         # hold描画用
         for y in range(len(block_instance.hold_now)):
             for x in range(len(block_instance.hold_now)):
                 if block_instance.hold_now[y][x]:
                     code = block_instance.hold_now[y][x]
-                    self.blit_img(code, x, y, hold_left_margin, hold_top_margin)
+                    self.blit_img(code, x, y, self.hold_left_margin, self.hold_top_margin)
 
-    def line_clear(self):
+    def clear_effect(self):
         block_size = 24
         sound_instance.clear_sound.play()
         for y in reversed(field_instance.clear_lines):
@@ -633,9 +715,9 @@ class Player:
                     if field_instance.rotate_hit(block_instance):
                         block_instance.rotate(RIGHT)
                     else:
-                        ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
-                        field_instance.ghost_mapping() # ゴーストブロックをマッピング
-                        field_instance.fix_time = 0
+                        field_instance.fix_time_sum = 0
+                    ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
+                    field_instance.ghost_mapping() # ゴーストブロックをマッピング
                     field_instance.mapping(block_instance, DROP)
 
                 if event.key == K_x:
@@ -646,10 +728,11 @@ class Player:
                     if field_instance.rotate_hit(block_instance):
                         block_instance.rotate(LEFT)
                     else:
-                        ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
-                        field_instance.ghost_mapping() # ゴーストブロックをマッピング
-                        field_instance.fix_time = 0
+                        field_instance.fix_time_sum = 0
+                    ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
+                    field_instance.ghost_mapping() # ゴーストブロックをマッピング
                     field_instance.mapping(block_instance, DROP)  #ブロックをマッピング
+
                 if event.key == K_LSHIFT:
                     block_instance.hold()
 
@@ -714,11 +797,11 @@ while True:
             field_instance.hold = False
 
         time_passed = clock.tick(60)
-        player_instance.key_handler()  # キー入力受付
         field_instance.free_fall(time_passed)  # 自由落下処理
+        player_instance.key_handler()  # キー入力受付
         field_instance.soft_drop_fix(time_passed)  # 固定処理
         if field_instance.line_clear_flag:
-            draw_instance.line_clear()
+            draw_instance.clear_effect()
             pygame.time.wait(500)
         draw_instance.draw_play(time_passed)
         pygame.display.update()
