@@ -177,6 +177,10 @@ class Field:
         self.ren_flag = False
         # ラインクリア用フラグ
         self.line_clear_flag = False
+        # 消したライン数
+        self.cleared_lines = 0
+        # LEVEL
+        self.level = 1
 
     def mapping(self, block, process):
         field_x = block.location[0]
@@ -290,6 +294,9 @@ class Field:
         for y in self.clear_lines: del self.field[y]
         for y in range(len(self.clear_lines)):
             self.field.insert(2, [99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 99])
+        self.cleared_lines += len(self.clear_lines)
+        if self.cleared_lines == 10:
+            self.level += 1
 
     def free_fall(self, time):
         if self.fall_time_sum >= self.fall_interval:
@@ -470,6 +477,8 @@ class Draw():
         self.score_str = self.game_font.render('SCORE', True, (255, 255, 255))
         self.hold_str = self.game_font.render('HOLD', True, (255, 255, 255))
         self.next_str = self.game_font.render('NEXT', True, (255, 255, 255))
+        self.lines_str = self.game_font.render('LINES', True, (255, 255, 255))
+        self.level_str = self.game_font.render('LEVEL', True, (255, 255, 255))
 
         # PLAY用変数
         self.field_left_margin = CELL * 4  # +3が実際の表示領域
@@ -505,15 +514,24 @@ class Draw():
         self.screen.blit(self.next_str, (self.next_left_margin, self.next_top_margin - CELL * 2))
         self.screen.blit(self.hold_str, (self.hold_left_margin, self.hold_top_margin - CELL * 2))
         self.screen.blit(self.score_str, (self.hold_left_margin, self.hold_top_margin + CELL * 3))
+        self.screen.blit(self.lines_str, (self.hold_left_margin, self.hold_top_margin + CELL * 6))
+        self.screen.blit(self.level_str, (self.hold_left_margin, self.hold_top_margin + CELL * 9))
         # SCORE表示
         score_num = self.game_font.render(str(field_instance.score), True, (255, 255, 255))
         self.screen.blit(score_num, (self.hold_left_margin, self.hold_top_margin + CELL * 4))
+        # LINES表示
+        lines_num = self.game_font.render(str(field_instance.cleared_lines), True, (255, 255, 255))
+        self.screen.blit(lines_num, (self.hold_left_margin, self.hold_top_margin + CELL * 7))
+        # LEVEL表示
+        level_num = self.game_font.render(str(field_instance.level), True, (255, 255, 255))
+        self.screen.blit(level_num, (self.hold_left_margin, self.hold_top_margin + CELL * 10))
+
 
         # TETRIS描画用
         if self.tetris_str_flag:
             if self.tetris_time <= 2000:
                 self.tetris_str = self.game_font.render('TETRIS!', True, (255, 255, 255))
-                self.screen.blit(self.tetris_str, (self.hold_left_margin, self.hold_top_margin + CELL * 5))
+                self.screen.blit(self.tetris_str, (self.hold_left_margin, self.hold_top_margin + CELL * 7))
             else:
                 self.tetris_time = 0
                 self.tetris_str_flag = False
@@ -523,7 +541,7 @@ class Draw():
         if self.ren_number:
             if self.ren_time <= 2000:
                 self.ren_str = self.game_font.render(self.ren_number + 'REN', True, (255, 255, 255))
-                self.screen.blit(self.ren_str, (self.hold_left_margin, self.hold_top_margin + CELL * 6))
+                self.screen.blit(self.ren_str, (self.hold_left_margin, self.hold_top_margin + CELL * 8))
             else:
                 self.ren_time = 0
                 self.ren_number = 0
@@ -534,8 +552,8 @@ class Draw():
             if self.t_spin_time <= 2000:
                 self.t_spin_str1 = self.game_font.render('T-Spin', True, (255, 255, 255))
                 self.t_spin_str2 = self.game_font.render(self.t_spin_type, True, (255, 255, 255))
-                self.screen.blit(self.t_spin_str1, (self.hold_left_margin, self.hold_top_margin + CELL * 7))
-                self.screen.blit(self.t_spin_str2, (self.hold_left_margin, self.hold_top_margin + CELL * 8))
+                self.screen.blit(self.t_spin_str1, (self.hold_left_margin, self.hold_top_margin + CELL * 9))
+                self.screen.blit(self.t_spin_str2, (self.hold_left_margin, self.hold_top_margin + CELL * 10))
             else:
                 self.t_spin_time = 0
                 self.t_spin_type = None
