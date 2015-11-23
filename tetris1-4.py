@@ -5,15 +5,21 @@ from pygame.locals import *
 import copy
 import threading
 
+# control
 LEFT = 0
 RIGHT = 1
 DOWN = 2
+# mapping
 DROP = 0
 CLEAR = 1
 FIX = 2
 GHOST = 3
+# state
 TITLE = 0
 PLAY = 1
+GAMEOVER = 2
+GAMECLEAR = 3
+# draw
 CELL = 24  # ブロック1つ(1マス)の大きさ
 
 class Block:
@@ -168,8 +174,9 @@ class Field:
         self.fixed = False
         # hold用フラグ
         self.hold = False
-        # T-Spin用フラグ
+        # T-Spin用
         self.t_spin_flag = False
+        self.store_location = copy.deepcopy(block_instance.location)
         # スコア計算用変数
         self.score = 0
         # REN用変数,Flag
@@ -274,14 +281,13 @@ class Field:
         return True
 
     def line_clear_check(self):
-        self.clear_lines = []
+        self.clear_lines = []  # 消去可能ラインが何番目かを入れておく
         for y in range(self.field_height - 4, 2, -1):
+            # フィールドの底から右方向に走査して，1行あたりの0の個数をカウント
             zero_count = self.field[y].count(0)
-            if zero_count == 0:
-                self.clear_lines.append(y)
-            if zero_count == 10:
-                break
-        if self.clear_lines: self.line_clear_flag = True
+            if zero_count == 0: self.clear_lines.append(y)  # 消去可能
+            if zero_count == 10: break  # これより上にブロックはないのでbreak
+        if self.clear_lines: self.line_clear_flag = True  # 消去可能ラインがあったらフラグをTrueに
         # RENの判定
         if self.clear_lines:
             if self.ren_flag: self.ren += 1
@@ -294,10 +300,17 @@ class Field:
         for y in self.clear_lines: del self.field[y]
         for y in range(len(self.clear_lines)):
             self.field.insert(2, [99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 99])
+        # 消去済みライン数更新
         self.cleared_lines += len(self.clear_lines)
-        if self.
-        if self.cleared_lines >= 10:
-            self.level += 1
+        # LEVEL UP 処理
+        for i in range(1, 15):
+            if self.level == i and self.cleared_lines >= i*10:
+                self.level += 1
+                self.fall_interval /= 2
+                sound_instance.level_up.play()
+        # ゲームクリア判定
+        if self.cleared_lines >= 150:
+            Player.game_state = GAMECLEAR
 
     def free_fall(self, time):
         if self.fall_time_sum >= self.fall_interval:
@@ -310,7 +323,7 @@ class Field:
             self.fall_time_sum = 0
         self.fall_time_sum += time
 
-    def soft_drop_fix(self, time):
+    def pre_fix(self, time):
         if self.fixing:
             if self.fix_time_sum >= self.time_to_fix:
                 if not self.bottom_hit(block_instance):
@@ -409,6 +422,7 @@ class Field:
         if cleared_lines == 1:
             if self.t_spin_flag:
                 draw_instance.t_spin_type = 'Single !'
+                sound_instance.t_spin_sound.play()
                 print('t-spin1')
                 score = 800
             else:
@@ -416,6 +430,7 @@ class Field:
         elif cleared_lines == 2:
             if self.t_spin_flag:
                 draw_instance.t_spin_type = 'Double !'
+                sound_instance.t_spin_sound.play()
                 print('t-spin2')
                 score = 1200
             else:
@@ -423,6 +438,7 @@ class Field:
         elif cleared_lines == 3:
             if self.t_spin_flag:
                 draw_instance.t_spin_type = 'Triple !'
+                sound_instance.t_spin_sound.play()
                 print('t-spin3')
                 score = 1600
             else:
@@ -438,6 +454,10 @@ class Field:
             # RENをスコアに加算
             score += self.ren * 50
             draw_instance.ren_number = str(self.ren)
+            if self.ren == 1: sound_instance.ren1.play()
+            if self.ren == 2: sound_instance.ren2.play()
+            if self.ren == 3: sound_instance.ren3.play()
+            if self.ren >= 4: sound_instance.ren4.play()
         self.score += score
 
     def game_over_check(self):
@@ -445,7 +465,23 @@ class Field:
             for x in range(self.field_width):
                 if self.field[y][x] != 0:
                     if self.field[y][x] != 99:
-                        Player.game_state = TITLE
+                        # ゲーム状態をゲームオーバーに変更
+                        Player.game_state = GAMEOVER
+                        # スコアレコードに書き込み
+                        score_file = open('data/score.txt', 'a')
+                        score_file.write(str(self.score) + '\n')
+                        score_file.close()
+                        # スコアレコードの長さが3より小さい場合は'-'を3つ書き込み
+                        score_file = open('data/score.txt', 'r')
+                        score_list = score_file.read()
+                        score_list = score_list.split('\n')
+                        score_file.close()
+                        score_file = open('data/score.txt', 'a')
+                        if len(score_list) < 3:
+                            for i in range(3):
+                                score_file.write('-\n')
+                        break
+            if Player.game_state == GAMEOVER: break
 
 
 class Ghost:
@@ -474,6 +510,10 @@ class Draw():
         self.game_font = pygame.font.SysFont(None, 40)
         # TITLE
         self.title_str = self.sys_font.render('Press Space to Start', True, (255, 255, 255))
+        # GAMEOVER
+        self.gameover_str = self.sys_font.render('GAME OVER', True, (255, 255, 255))
+        self.gameclear_str = self.sys_font.render('GAME CLEAR', True, (255, 255, 255))
+        self.record_str = self.game_font.render('Record', True, (255, 255, 255))
         # PLAY
         self.score_str = self.game_font.render('SCORE', True, (255, 255, 255))
         self.hold_str = self.game_font.render('HOLD', True, (255, 255, 255))
@@ -509,6 +549,26 @@ class Draw():
         self.screen.fill((0, 0, 0))
         self.screen.blit(self.title_str, (50, 150))
 
+    def draw_game_over(self, clear):
+        # 画面を黒で塗りつぶし
+        self.screen.fill((0, 0, 0))
+        # ゲームオーバーの文字を表示
+        if clear: self.screen.blit(self.gameclear_str, (50, 150))
+        else: self.screen.blit(self.gameover_str, (50, 150))
+        # 自分のスコアを表示
+        score_num = self.game_font.render('Your Score : ' + str(field_instance.score), True, (255, 255, 255))
+        self.screen.blit(score_num, (50, 250))
+        # スコアデータを読み込んでトップ3を表示
+        self.screen.blit(self.record_str, (50, 350))
+        score_data = open('data/score.txt', 'r')
+        score_list = score_data.read()
+        score_list = score_list.split('\n')
+        score_list.sort(reverse=True)
+        for i in range(3):
+            top3 = self.game_font.render(str(i + 1) + ' : ' + str(score_list[i]), True, (255, 255, 255))
+            self.screen.blit(top3, (100, 400 + 50 * i))
+
+
     def draw_play(self, time):
         self.screen.fill((0, 0, 0))
         # 各種文字表示
@@ -531,7 +591,7 @@ class Draw():
         if self.tetris_str_flag:
             if self.tetris_time <= 2000:
                 self.tetris_str = self.game_font.render('TETRIS!', True, (255, 255, 255))
-                self.screen.blit(self.tetris_str, (self.hold_left_margin, self.hold_top_margin + CELL * 7))
+                self.screen.blit(self.tetris_str, (self.hold_left_margin, self.hold_top_margin + CELL * 12))
             else:
                 self.tetris_time = 0
                 self.tetris_str_flag = False
@@ -541,7 +601,7 @@ class Draw():
         if self.ren_number:
             if self.ren_time <= 2000:
                 self.ren_str = self.game_font.render(self.ren_number + 'REN', True, (255, 255, 255))
-                self.screen.blit(self.ren_str, (self.hold_left_margin, self.hold_top_margin + CELL * 8))
+                self.screen.blit(self.ren_str, (self.hold_left_margin, self.hold_top_margin + CELL * 14))
             else:
                 self.ren_time = 0
                 self.ren_number = 0
@@ -552,8 +612,8 @@ class Draw():
             if self.t_spin_time <= 2000:
                 self.t_spin_str1 = self.game_font.render('T-Spin', True, (255, 255, 255))
                 self.t_spin_str2 = self.game_font.render(self.t_spin_type, True, (255, 255, 255))
-                self.screen.blit(self.t_spin_str1, (self.hold_left_margin, self.hold_top_margin + CELL * 9))
-                self.screen.blit(self.t_spin_str2, (self.hold_left_margin, self.hold_top_margin + CELL * 10))
+                self.screen.blit(self.t_spin_str1, (self.hold_left_margin, self.hold_top_margin + CELL * 15))
+                self.screen.blit(self.t_spin_str2, (self.hold_left_margin, self.hold_top_margin + CELL * 16))
             else:
                 self.t_spin_time = 0
                 self.t_spin_type = None
@@ -582,7 +642,10 @@ class Draw():
 
     def clear_effect(self):
         block_size = 24
-        sound_instance.clear_sound.play()
+        if len(field_instance.clear_lines) == 1: sound_instance.clear_sound1.play()
+        if len(field_instance.clear_lines) == 2: sound_instance.clear_sound2.play()
+        if len(field_instance.clear_lines) == 3: sound_instance.clear_sound3.play()
+        if len(field_instance.clear_lines) == 4: sound_instance.clear_sound4.play()
         for y in reversed(field_instance.clear_lines):
             for x in range(3, Field.field_width - 3):
                 self.screen.blit(self.block_img[8], (self.field_left_margin + x * block_size, self.field_top_margin + y * block_size))
@@ -664,8 +727,12 @@ class Draw():
 
 class Player:
     # キー入力用カウンタ
-    down_threshold = 2
-    side_threshold = 5
+    # Windows
+#    down_threshold = 2
+#    side_threshold = 5
+    # Mac
+    down_threshold = 1
+    side_threshold = 2
     game_state = TITLE
 
     def __init__(self):
@@ -683,6 +750,7 @@ class Player:
 
     def key_handler(self):
         pressed = pygame.key.get_pressed()
+        # ソフトドロップ
         if pressed[K_DOWN]:
             self.down_count += 1
             if self.down_count >= Player.down_threshold:
@@ -695,6 +763,7 @@ class Player:
                 else: field_instance.fixing = True
                 self.down_count = 0
 
+        # 左移動
         if pressed[K_LEFT]:
             self.left_count += 1
             if self.left_count >= Player.side_threshold:
@@ -708,6 +777,7 @@ class Player:
                     field_instance.mapping(block_instance, DROP)
                 self.left_count = 0
 
+        # 右移動
         if pressed[K_RIGHT]:
             self.right_count += 1
             if self.right_count >= Player.side_threshold:
@@ -724,7 +794,7 @@ class Player:
             if event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     sys.exit()
-
+                # 左回転
                 if event.key == K_z:
                     sound_instance.rotate_sound.play()
                     field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
@@ -737,7 +807,7 @@ class Player:
                     ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                     field_instance.ghost_mapping() # ゴーストブロックをマッピング
                     field_instance.mapping(block_instance, DROP)
-
+                # 右回転
                 if event.key == K_x:
                     sound_instance.rotate_sound.play()
                     field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
@@ -750,12 +820,11 @@ class Player:
                     ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                     field_instance.ghost_mapping() # ゴーストブロックをマッピング
                     field_instance.mapping(block_instance, DROP)  #ブロックをマッピング
-
+                # ホールド
                 if event.key == K_LSHIFT:
                     block_instance.hold()
-
+                # ハードドロップ
                 if event.key == K_UP:
-#                    hard_sound.play()
                     field_instance.hard_drop()
 
 class Sound:
@@ -764,10 +833,19 @@ class Sound:
         self.hard_sound = pygame.mixer.Sound('data/hard.wav')
         self.rotate_sound = pygame.mixer.Sound('data/rotate.wav')
         self.hold_sound = pygame.mixer.Sound('data/hold.wav')
-        self.clear_sound = pygame.mixer.Sound('data/clear.wav')
+        self.clear_sound1 = pygame.mixer.Sound('data/clear1.wav')
+        self.clear_sound2 = pygame.mixer.Sound('data/clear2.wav')
+        self.clear_sound3 = pygame.mixer.Sound('data/clear3.wav')
+        self.clear_sound4 = pygame.mixer.Sound('data/clear4.wav')
+        self.t_spin_sound = pygame.mixer.Sound('data/t_spin.wav')
+        self.ren1 = pygame.mixer.Sound('data/ren1.wav')
+        self.ren2 = pygame.mixer.Sound('data/ren2.wav')
+        self.ren3 = pygame.mixer.Sound('data/ren3.wav')
+        self.ren4 = pygame.mixer.Sound('data/ren4.wav')
+        self.level_up = pygame.mixer.Sound('data/level_up.wav')
         # control_sound = pygame.mixer.Sound('data/control.wav')
 
-        pygame.mixer.music.load('data/bgm01_intro.ogg')
+#        pygame.mixer.music.load('data/bgm01_intro.ogg')
 
 # ゲーム開始前の初期化処理が必要か
 play_init = True
@@ -787,6 +865,15 @@ while True:
         pygame.display.update()
         play_init = True
 
+    if Player.game_state == GAMEOVER or Player.game_state == GAMECLEAR:
+        if Player.game_state == GAMEOVER:
+            draw_instance.draw_game_over(clear=False)
+        if Player.game_state == GAMECLEAR:
+            draw_instance.draw_game_over(clear=True)
+        player_instance.title_key_handler()
+        pygame.display.update()
+        play_init = True
+
     if Player.game_state == PLAY:
         if play_init:
             block_instance = Block()
@@ -797,13 +884,13 @@ while True:
             ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
             field_instance.ghost_mapping() # ゴーストブロックをマッピング
             field_instance.mapping(block_instance, DROP)  # フィールドにマッピング
-            pygame.mixer.music.play(1)
+#            pygame.mixer.music.play(1)
             # ゲーム開始前の初期化処理が完了
             play_init = False
 
-        if not pygame.mixer.music.get_busy():
-            pygame.mixer.music.load('data/bgm01_loop.ogg')
-            pygame.mixer.music.play(-1)
+#        if not pygame.mixer.music.get_busy():
+#            pygame.mixer.music.load('data/bgm01_loop.ogg')
+#            pygame.mixer.music.play(-1)
 
         if field_instance.fixed:
             block_instance.pop_block()  # ブロックを生成
@@ -817,7 +904,7 @@ while True:
         time_passed = clock.tick(60)
         field_instance.free_fall(time_passed)  # 自由落下処理
         player_instance.key_handler()  # キー入力受付
-        field_instance.soft_drop_fix(time_passed)  # 固定処理
+        field_instance.pre_fix(time_passed)  # 固定処理
         if field_instance.line_clear_flag:
             draw_instance.clear_effect()
             pygame.time.wait(500)
