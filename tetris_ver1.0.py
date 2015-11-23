@@ -410,10 +410,8 @@ class Field:
                         if code > 10: bottom.append(code)
                 # topとbottom内の要素数に応じてスピンの判定
                 if len(top) == 2 and len(bottom) >= 1:
-                    print('T-Spin')
                     return True
                 elif len(top) == 1 and len(bottom) == 2:
-                    print('Mini T-Spin')
                     return True
                 return False
             return False
@@ -429,31 +427,27 @@ class Field:
         score = 0
         if cleared_lines == 1:
             if self.t_spin_flag:
-                draw_instance.t_spin_type = 'Single !'
+                draw_instance.t_spin_type = 'Single!'
                 sound_instance.t_spin_sound.play()
-                print('t-spin1')
                 score = 800
             else:
                 score = 100
         elif cleared_lines == 2:
             if self.t_spin_flag:
-                draw_instance.t_spin_type = 'Double !'
+                draw_instance.t_spin_type = 'Double!'
                 sound_instance.t_spin_sound.play()
-                print('t-spin2')
                 score = 1200
             else:
                 score = 300
         elif cleared_lines == 3:
             if self.t_spin_flag:
-                draw_instance.t_spin_type = 'Triple !'
+                draw_instance.t_spin_type = 'Triple!'
                 sound_instance.t_spin_sound.play()
-                print('t-spin3')
                 score = 1600
             else:
                 score = 500
         elif cleared_lines == 4:
             draw_instance.tetris_str_flag = True
-            print('tetris')
             score = 800
         else:
             if self.t_spin_flag:
