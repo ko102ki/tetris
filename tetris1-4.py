@@ -295,7 +295,8 @@ class Field:
         for y in range(len(self.clear_lines)):
             self.field.insert(2, [99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 99])
         self.cleared_lines += len(self.clear_lines)
-        if self.cleared_lines == 10:
+        if self.
+        if self.cleared_lines >= 10:
             self.level += 1
 
     def free_fall(self, time):
@@ -525,7 +526,6 @@ class Draw():
         # LEVEL表示
         level_num = self.game_font.render(str(field_instance.level), True, (255, 255, 255))
         self.screen.blit(level_num, (self.hold_left_margin, self.hold_top_margin + CELL * 10))
-
 
         # TETRIS描画用
         if self.tetris_str_flag:
