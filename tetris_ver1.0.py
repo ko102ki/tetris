@@ -168,7 +168,7 @@ class Field:
         self.fall_time_sum = 0
         # 固定時間設定用変数
         self.fix_time_sum = 0
-        self.time_to_fix = 1000
+        self.time_to_fix = 500
         self.fixing = False
         # 固定用フラグ
         self.fixed = False
@@ -339,8 +339,12 @@ class Field:
 
     def fix(self):
         self.t_spin_flag = self.t_spin_check()  # Tスピン判定
-        self.mapping(block_instance, FIX)
+        # 固定音再生
         sound_instance.fix_sound.play()
+        # 固定時の描画
+        draw_instance.fix_effect()
+        # 固定処理
+        self.mapping(block_instance, FIX)
         # 消去可能ライン数確認
         self.line_clear_check()
         # スコア計算
@@ -673,6 +677,27 @@ class Draw():
                     code = block_instance.hold_now[y][x]
                     self.blit_img(code, x, y, self.hold_left_margin, self.hold_top_margin)
 
+    def hard_drop(self):
+        pass
+
+    def fix_effect(self):
+        index = block_instance.return_now_pattern()
+        pattern_len = len(block_instance.pattern)
+        for y in range(pattern_len):
+            for x in range(pattern_len):
+                if block_instance.pattern[y][x]:
+                    field_x = block_instance.location[0] + x
+                    field_y = block_instance.location[1] + y
+                    for a in range(256):
+                        self.block_img[8].set_alpha(a)
+                        self.screen.blit(self.block_img[8], (self.field_left_margin + field_x * CELL, self.field_top_margin + field_y * CELL))
+                        pygame.display.update()
+                    for a in range(256):
+                        self.block_img[index].set_alpha(a)
+                        self.screen.blit(self.block_img[index], (self.field_left_margin + field_x * CELL, self.field_top_margin + field_y * CELL))
+                        pygame.display.update()
+#            pygame.time.wait(200)
+
     def clear_effect(self):
         block_size = 24
         if len(field_instance.clear_lines) == 1: sound_instance.clear_sound1.play()
@@ -763,11 +788,11 @@ class Draw():
 class Player:
     # キー入力用カウンタ
     # Windows
-    down_threshold = 2
-    side_threshold = 5
+#    down_threshold = 2
+#    side_threshold = 5
     # Mac
-#    down_threshold = 1
-#    side_threshold = 2
+    down_threshold = 1
+    side_threshold = 2
     # ゲーム状態を保持
     game_state = TITLE
 
@@ -809,6 +834,7 @@ class Player:
                     field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
                     field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
                     sound_instance.control_sound.play()  # 移動音再生
+                    field_instance.fix_time_sum = 0  # 固定までの時間をリセット
                     block_instance.control(LEFT)
                     ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                     field_instance.ghost_mapping() # ゴーストブロックをマッピング
@@ -823,6 +849,7 @@ class Player:
                     field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
                     field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
                     sound_instance.control_sound.play()  # 移動音再生
+                    field_instance.fix_time_sum = 0  # 固定までの時間をリセット
                     block_instance.control(RIGHT)
                     ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                     field_instance.ghost_mapping() # ゴーストブロックをマッピング
@@ -886,8 +913,8 @@ class Sound:
         self.game_clear = pygame.mixer.Sound('data/game_clear.wav')
         self.game_over = pygame.mixer.Sound('data/game_over.wav')
 
-        pygame.mixer.music.load('data/bgm01_intro.ogg')
-        pygame.mixer.music.set_volume(0.3)
+#        pygame.mixer.music.load('data/bgm01_intro.ogg')
+#        pygame.mixer.music.set_volume(0.3)
 
 
 # main
@@ -908,7 +935,7 @@ while True:
         play_init = True
 
     if Player.game_state == GAMEOVER or Player.game_state == GAMECLEAR:
-        pygame.mixer.music.stop()
+#        pygame.mixer.music.stop()
         if Player.game_state == GAMEOVER:
             draw_instance.draw_game_over(clear=False)
         if Player.game_state == GAMECLEAR:
@@ -927,13 +954,13 @@ while True:
             ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
             field_instance.ghost_mapping() # ゴーストブロックをマッピング
             field_instance.mapping(block_instance, DROP)  # フィールドにマッピング
-            pygame.mixer.music.play(1)
+#            pygame.mixer.music.play(1)
             # ゲーム開始前の初期化処理が完了
             play_init = False
 
-        if not pygame.mixer.music.get_busy():
-            pygame.mixer.music.load('data/bgm01_loop.ogg')
-            pygame.mixer.music.play(-1)
+#        if not pygame.mixer.music.get_busy():
+#            pygame.mixer.music.load('data/bgm01_loop.ogg')
+#            pygame.mixer.music.play(-1)
 
         if field_instance.fixed:
             block_instance.pop_block()  # ブロックを生成
