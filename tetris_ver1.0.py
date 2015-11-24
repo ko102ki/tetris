@@ -995,7 +995,7 @@ class Sound:
         self.game_clear = pygame.mixer.Sound('data/game_clear.wav')
         self.game_over = pygame.mixer.Sound('data/game_over.wav')
 
-        pygame.mixer.music.load('data/bgm01_intro.ogg')
+        pygame.mixer.music.load('data/bgm01_loop.ogg')
         pygame.mixer.music.set_volume(0.3)
 
 
@@ -1036,13 +1036,10 @@ while True:
             ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
             field_instance.ghost_mapping() # ゴーストブロックをマッピング
             field_instance.mapping(block_instance, DROP)  # フィールドにマッピング
-            pygame.mixer.music.play(1)
+            pygame.mixer.music.play(-1)
             # ゲーム開始前の初期化処理が完了
             play_init = False
 
-        if not pygame.mixer.music.get_busy():
-            pygame.mixer.music.load('data/bgm01_loop.ogg')
-            pygame.mixer.music.play(-1)
 
         if field_instance.fixed:
             block_instance.pop_block()  # ブロックを生成
