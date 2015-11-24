@@ -681,22 +681,20 @@ class Draw():
         pass
 
     def fix_effect(self):
-        index = block_instance.return_now_pattern()
-        pattern_len = len(block_instance.pattern)
-        for y in range(pattern_len):
-            for x in range(pattern_len):
-                if block_instance.pattern[y][x]:
-                    field_x = block_instance.location[0] + x
-                    field_y = block_instance.location[1] + y
-                    for a in range(256):
-                        self.block_img[8].set_alpha(a)
-                        self.screen.blit(self.block_img[8], (self.field_left_margin + field_x * CELL, self.field_top_margin + field_y * CELL))
-                        pygame.display.update()
-                    for a in range(256):
-                        self.block_img[index].set_alpha(a)
-                        self.screen.blit(self.block_img[index], (self.field_left_margin + field_x * CELL, self.field_top_margin + field_y * CELL))
-                        pygame.display.update()
-#            pygame.time.wait(200)
+        def change_alpha(index):
+            pattern_len = len(block_instance.pattern)
+            for a in range(256):
+                for y in range(pattern_len):
+                    for x in range(pattern_len):
+                        if block_instance.pattern[y][x]:
+                            field_x = block_instance.location[0] + x
+                            field_y = block_instance.location[1] + y
+                            self.block_img[index].set_alpha(a)
+                            self.screen.blit(self.block_img[index], (self.field_left_margin + field_x * CELL, self.field_top_margin + field_y * CELL))
+                pygame.display.update()
+        block_index = block_instance.return_now_pattern() - 1
+        change_alpha(8)
+        change_alpha(block_index)
 
     def clear_effect(self):
         block_size = 24
