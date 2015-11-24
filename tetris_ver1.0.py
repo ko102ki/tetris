@@ -3,7 +3,6 @@ import pygame
 import sys
 from pygame.locals import *
 import copy
-import threading
 
 # control
 LEFT = 0
@@ -310,10 +309,11 @@ class Field:
                 draw_instance.level_up_flag = True
                 sound_instance.level_up.play()
         # ゲームクリア判定
-        if self.cleared_lines >= 150:
-            # ゲームクリア音再生
-            sound_instance.game_clear.play()
-            Player.game_state = GAMECLEAR
+        self.game_over_check()
+#        if self.cleared_lines >= 150:
+#            # ゲームクリア音再生
+#            sound_instance.game_clear.play()
+#            Player.game_state = GAMECLEAR
 
     def free_fall(self, time):
         if self.fall_time_sum >= self.fall_interval:
@@ -471,30 +471,39 @@ class Field:
         self.score += score
 
     def game_over_check(self):
-        for y in range(0, 2):
-            for x in range(self.field_width):
-                if self.field[y][x] != 0:
-                    if self.field[y][x] != 99:
-                        # ゲームオーバー音再生
-                        sound_instance.game_over.play()
-                        # ゲーム状態をゲームオーバーに変更
-                        Player.game_state = GAMEOVER
-                        # スコアレコードに書き込み
-                        score_file = open('data/score.txt', 'a')
-                        score_file.write(str(self.score) + '\n')
-                        score_file.close()
-                        # スコアレコードの長さが3より小さい場合は'-'を3つ書き込み
-                        score_file = open('data/score.txt', 'r')
-                        score_list = score_file.read()
-                        score_list = score_list.split('\n')
-                        score_file.close()
-                        score_file = open('data/score.txt', 'a')
-                        if len(score_list) < 3:
-                            for i in range(3):
-                                score_file.write('-\n')
-                        break
-            if Player.game_state == GAMEOVER: break
-
+        def record_score():
+            # スコアレコードに書き込み
+            score_file = open('data/score.txt', 'a')
+            score_file.write(str(self.score) + '\n')
+            score_file.close()
+            # スコアレコードの長さが3より小さい場合は'-'を3つ書き込み
+            score_file = open('data/score.txt', 'r')
+            score_list = score_file.read()
+            score_list = score_list.split('\n')
+            score_file.close()
+            score_file = open('data/score.txt', 'a')
+            if len(score_list) < 3:
+                for i in range(3):
+                    score_file.write('0\n')
+        if not Player.game_state == GAMEOVER:
+            if not Player.game_state == GAMECLEAR:
+                # ゲームオーバーチェック
+                for y in range(0, 2):
+                    for x in range(self.field_width):
+                        if self.field[y][x] != 0:
+                            if self.field[y][x] != 99:
+                                # ゲームオーバー音再生
+                                sound_instance.game_over.play()
+                                # ゲーム状態をゲームオーバーに変更
+                                Player.game_state = GAMEOVER
+                                record_score()
+                                break
+                    if Player.game_state == GAMEOVER: break
+                # ゲームクリアチェック
+                if self.cleared_lines >= 150:
+                    # ゲームクリア音再生
+                    sound_instance.game_clear.play()
+                    Player.game_state = GAMECLEAR
 
 class Ghost:
     def __init__(self):
@@ -585,16 +594,18 @@ class Draw():
         # ランキングを読み込んでトップ3を表示
         self.screen.blit(self.record_str, (50, 300))
         score_data = open('data/score.txt', 'r')
-        score_list = score_data.read()
-        score_list = score_list.split('\n')
-        score_list.sort(reverse=True)
+        score_buffer = score_data.read()
+        score_list = score_buffer.split('\n')
+        score_list.remove('')
+        int_list = sorted(map(int, score_list), reverse=True)
         for i in range(3):
-            top3 = self.game_font.render(str(i + 1) + ' : ' + str(score_list[i]), True, (255, 255, 255))
+            int_score = int_list[i]
+            if int_score == 0: int_score = '---'
+            top3 = self.game_font.render(str(i + 1) + ' : ' + str(int_score), True, (255, 255, 255))
             self.screen.blit(top3, (100, 350 + 50 * i))
         # キャラクター表示
         if clear: self.screen.blit(self.game_clear, (300, 230))
         else: self.screen.blit(self.game_over, (300, 230))
-
 
     def draw_play(self, time):
         self.screen.fill((0, 0, 0))
@@ -692,9 +703,11 @@ class Draw():
                             self.block_img[index].set_alpha(a)
                             self.screen.blit(self.block_img[index], (self.field_left_margin + field_x * CELL, self.field_top_margin + field_y * CELL))
                 pygame.display.update()
+
         block_index = block_instance.return_now_pattern() - 1
         change_alpha(8)
         change_alpha(block_index)
+
 
     def clear_effect(self):
         block_size = 24
@@ -702,10 +715,20 @@ class Draw():
         if len(field_instance.clear_lines) == 2: sound_instance.clear_sound2.play()
         if len(field_instance.clear_lines) == 3: sound_instance.clear_sound3.play()
         if len(field_instance.clear_lines) == 4: sound_instance.clear_sound4.play()
-        for y in reversed(field_instance.clear_lines):
-            for x in range(3, Field.field_width - 3):
-                self.screen.blit(self.block_img[8], (self.field_left_margin + x * block_size, self.field_top_margin + y * block_size))
-            pygame.display.update()
+        def change_alpha(index):
+            for x in range(1, 6):
+                for y in reversed(field_instance.clear_lines):
+                    self.screen.blit(self.block_img[index], (self.field_left_margin + 7 * block_size + x * block_size, self.field_top_margin + y * block_size))
+                    self.screen.blit(self.block_img[index], (self.field_left_margin + 8 * block_size + -x * block_size, self.field_top_margin + y * block_size))
+                    if x > 1:
+                        self.screen.blit(self.block_img[index+1], (self.field_left_margin + 7 * block_size + (x-1) * block_size, self.field_top_margin + y * block_size))
+                        self.screen.blit(self.block_img[index+1], (self.field_left_margin + 8 * block_size + -(x-1) * block_size, self.field_top_margin + y * block_size))
+                    if x > 3:
+                        self.screen.blit(self.block_img[index+1], (self.field_left_margin + 7 * block_size + x * block_size, self.field_top_margin + y * block_size))
+                        self.screen.blit(self.block_img[index+1], (self.field_left_margin + 8 * block_size + -x * block_size, self.field_top_margin + y * block_size))
+                pygame.display.update()
+                pygame.time.wait(50)
+        change_alpha(8)
         field_instance.line_clear_flag = False
 
     def blit_img(self, code, x, y, left_margin, bottom_margin):
@@ -780,24 +803,30 @@ class Draw():
         self.block_img.append(pygame.image.load('data/t.bmp'))
         self.block_img.append(pygame.image.load('data/w.bmp'))
         self.block_img.append(pygame.image.load('data/c.bmp'))
+        self.block_img.append(pygame.image.load('data/b.bmp'))
         self.game_over = pygame.image.load('data/denx_chan_over.png')
         self.game_clear = pygame.image.load('data/denx_chan_clear.png')
 
 class Player:
-    # キー入力用カウンタ
+    # キー入力用しきい値
     # Windows
-#    down_threshold = 2
-#    side_threshold = 5
-    # Mac
     down_threshold = 1
     side_threshold = 2
+    # Mac
+#    down_threshold = 1
+#    side_threshold = 2
     # ゲーム状態を保持
     game_state = TITLE
 
     def __init__(self):
+        # キー入力ピッチ調整用
         self.left_count = 0
         self.right_count = 0
         self.down_count = 0
+        # ため時間
+        self.down_time = 0
+        self.left_time = 0
+        self.right_time = 0
 
     def title_key_handler(self):
         for event in pygame.event.get():
@@ -807,57 +836,112 @@ class Player:
                 if event.key == K_SPACE:
                     Player.game_state = PLAY
 
-    def key_handler(self):
+    def key_handler(self, time):
+        # キーモジュール方式
         pressed = pygame.key.get_pressed()
         # ソフトドロップ
         if pressed[K_DOWN]:
-            self.down_count += 1
-            if self.down_count >= Player.down_threshold:
-                if not field_instance.bottom_hit(block_instance):
-                    field_instance.mapping(block_instance, CLEAR)
-                    block_instance.control(DOWN)
-                    sound_instance.control_sound.play()
-                    # 自分が動かしたマス目分だけスコアに加算
-                    field_instance.score += 1
-                    field_instance.mapping(block_instance, DROP)
-                else: field_instance.fixing = True
-                self.down_count = 0
-
+            if self.down_time >= 100:
+                if pressed[K_DOWN]:
+                    if self.down_count >= Player.down_threshold:
+                        # ここから移動処理
+                        if not field_instance.bottom_hit(block_instance):
+                            field_instance.mapping(block_instance, CLEAR)
+                            block_instance.control(DOWN)
+                            sound_instance.control_sound.play()
+                            # 自分が動かしたマス目分だけスコアに加算
+                            field_instance.score += 1
+                            field_instance.mapping(block_instance, DROP)
+                        else: field_instance.fixing = True
+                        # ここまで移動処理
+                        self.down_count = 0
+                    self.down_count += 1
+                if not pressed[K_DOWN]: self.down_time = 0
+            else: self.down_time += time
+        elif not pressed[K_DOWN]: self.down_time = 0
         # 左移動
         if pressed[K_LEFT]:
-            self.left_count += 1
-            if self.left_count >= Player.side_threshold:
-                if not field_instance.left_hit(block_instance):
-                    field_instance.mapping(block_instance, CLEAR)
-                    field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
-                    field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
-                    sound_instance.control_sound.play()  # 移動音再生
-                    field_instance.fix_time_sum = 0  # 固定までの時間をリセット
-                    block_instance.control(LEFT)
-                    ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
-                    field_instance.ghost_mapping() # ゴーストブロックをマッピング
-                    field_instance.mapping(block_instance, DROP)
-                self.left_count = 0
-
+            if self.left_time >= 200:
+                if pressed[K_LEFT]:
+                    if self.left_count >= Player.side_threshold:
+                        # ここから移動処理
+                        if not field_instance.left_hit(block_instance):
+                            field_instance.mapping(block_instance, CLEAR)
+                            field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
+                            field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
+                            sound_instance.control_sound.play()  # 移動音再生
+                            field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+                            block_instance.control(LEFT)
+                            ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
+                            field_instance.ghost_mapping() # ゴーストブロックをマッピング
+                            field_instance.mapping(block_instance, DROP)
+                        # ここまで移動処理
+                        self.left_count = 0
+                    self.left_count += 1
+                if not pressed[K_LEFT]: self.left_time = 0
+            else: self.left_time += time
+        elif not pressed[K_LEFT]: self.left_time = 0
         # 右移動
         if pressed[K_RIGHT]:
-            self.right_count += 1
-            if self.right_count >= Player.side_threshold:
-                if not field_instance.right_hit(block_instance):
-                    field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
-                    field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
-                    sound_instance.control_sound.play()  # 移動音再生
-                    field_instance.fix_time_sum = 0  # 固定までの時間をリセット
-                    block_instance.control(RIGHT)
-                    ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
-                    field_instance.ghost_mapping() # ゴーストブロックをマッピング
-                    field_instance.mapping(block_instance, DROP)
-                self.right_count = 0
-
+            if self.right_time >= 200:
+                if pressed[K_RIGHT]:
+                    if self.right_count >= Player.side_threshold:
+                        # ここから移動処理
+                        if not field_instance.right_hit(block_instance):
+                            field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
+                            field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
+                            sound_instance.control_sound.play()  # 移動音再生
+                            field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+                            block_instance.control(RIGHT)
+                            ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
+                            field_instance.ghost_mapping() # ゴーストブロックをマッピング
+                            field_instance.mapping(block_instance, DROP)
+                        # ここまで移動処理
+                        self.right_count = 0
+                    self.right_count += 1
+                if not pressed[K_RIGHT]: self.right_time = 0
+            else: self.right_time += time
+        else:self.right_time = 0
+        # イベントハンドラ方式
         for event in pygame.event.get():
             if event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     sys.exit()
+                # 下移動
+                if event.key == K_DOWN:
+                    # ここから移動処理
+                    if not field_instance.bottom_hit(block_instance):
+                        field_instance.mapping(block_instance, CLEAR)
+                        block_instance.control(DOWN)
+                        sound_instance.control_sound.play()
+                        # 自分が動かしたマス目分だけスコアに加算
+                        field_instance.score += 1
+                        field_instance.mapping(block_instance, DROP)
+                    else: field_instance.fixing = True
+                    # ここまで移動処理
+                # 左移動
+                if event.key == K_LEFT:
+                    if not field_instance.left_hit(block_instance):
+                        field_instance.mapping(block_instance, CLEAR)
+                        field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
+                        field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
+                        sound_instance.control_sound.play()  # 移動音再生
+                        field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+                        block_instance.control(LEFT)
+                        ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
+                        field_instance.ghost_mapping() # ゴーストブロックをマッピング
+                        field_instance.mapping(block_instance, DROP)
+                # 右移動
+                if event.key == K_RIGHT:
+                    if not field_instance.right_hit(block_instance):
+                        field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
+                        field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
+                        sound_instance.control_sound.play()  # 移動音再生
+                        field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+                        block_instance.control(RIGHT)
+                        ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
+                        field_instance.ghost_mapping() # ゴーストブロックをマッピング
+                        field_instance.mapping(block_instance, DROP)
                 # 左回転
                 if event.key == K_z:
                     sound_instance.rotate_sound.play()
@@ -911,8 +995,8 @@ class Sound:
         self.game_clear = pygame.mixer.Sound('data/game_clear.wav')
         self.game_over = pygame.mixer.Sound('data/game_over.wav')
 
-#        pygame.mixer.music.load('data/bgm01_intro.ogg')
-#        pygame.mixer.music.set_volume(0.3)
+        pygame.mixer.music.load('data/bgm01_intro.ogg')
+        pygame.mixer.music.set_volume(0.3)
 
 
 # main
@@ -933,7 +1017,7 @@ while True:
         play_init = True
 
     if Player.game_state == GAMEOVER or Player.game_state == GAMECLEAR:
-#        pygame.mixer.music.stop()
+        pygame.mixer.music.stop()
         if Player.game_state == GAMEOVER:
             draw_instance.draw_game_over(clear=False)
         if Player.game_state == GAMECLEAR:
@@ -952,13 +1036,13 @@ while True:
             ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
             field_instance.ghost_mapping() # ゴーストブロックをマッピング
             field_instance.mapping(block_instance, DROP)  # フィールドにマッピング
-#            pygame.mixer.music.play(1)
+            pygame.mixer.music.play(1)
             # ゲーム開始前の初期化処理が完了
             play_init = False
 
-#        if not pygame.mixer.music.get_busy():
-#            pygame.mixer.music.load('data/bgm01_loop.ogg')
-#            pygame.mixer.music.play(-1)
+        if not pygame.mixer.music.get_busy():
+            pygame.mixer.music.load('data/bgm01_loop.ogg')
+            pygame.mixer.music.play(-1)
 
         if field_instance.fixed:
             block_instance.pop_block()  # ブロックを生成
@@ -971,10 +1055,10 @@ while True:
 
         time_passed = clock.tick(60)
         field_instance.free_fall(time_passed)  # 自由落下処理
-        player_instance.key_handler()  # キー入力受付
+        player_instance.key_handler(time_passed)  # キー入力受付
         field_instance.pre_fix(time_passed)  # 固定処理
         if field_instance.line_clear_flag:
             draw_instance.clear_effect()
-            pygame.time.wait(500)
+            pygame.time.wait(100)
         draw_instance.draw_play(time_passed)
         pygame.display.update()
