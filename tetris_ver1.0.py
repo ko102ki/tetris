@@ -355,7 +355,7 @@ class Field:
 #        self.t_spin_flag = False
         self.fixed = True
         self.fixing = False
-        self.game_over_check()
+#        self.game_over_check()
 
     def hard_drop(self):
 #        self.mapping(block_instance, CLEAR)
@@ -476,7 +476,7 @@ class Field:
             score_file = open('data/score.txt', 'a')
             score_file.write(str(self.score) + '\n')
             score_file.close()
-            # スコアレコードの長さが3より小さい場合は'-'を3つ書き込み
+            # スコアレコードの長さが3より小さい場合は'0'を3つ書き込み
             score_file = open('data/score.txt', 'r')
             score_list = score_file.read()
             score_list = score_list.split('\n')
@@ -485,25 +485,26 @@ class Field:
             if len(score_list) < 3:
                 for i in range(3):
                     score_file.write('0\n')
-        if not Player.game_state == GAMEOVER:
-            if not Player.game_state == GAMECLEAR:
-                # ゲームオーバーチェック
-                for y in range(0, 2):
-                    for x in range(self.field_width):
-                        if self.field[y][x] != 0:
-                            if self.field[y][x] != 99:
-                                # ゲームオーバー音再生
-                                sound_instance.game_over.play()
-                                # ゲーム状態をゲームオーバーに変更
-                                Player.game_state = GAMEOVER
-                                record_score()
-                                break
-                    if Player.game_state == GAMEOVER: break
-                # ゲームクリアチェック
-                if self.cleared_lines >= 150:
-                    # ゲームクリア音再生
-                    sound_instance.game_clear.play()
-                    Player.game_state = GAMECLEAR
+#        if not Player.game_state == GAMEOVER:
+#            if not Player.game_state == GAMECLEAR:
+            # ゲームオーバーチェック
+        for y in range(0, 2):
+            for x in range(self.field_width):
+                if self.field[y][x] != 0:
+                    if self.field[y][x] != 99:
+                        # ゲームオーバー音再生
+                        sound_instance.game_over.play()
+                        # ゲーム状態をゲームオーバーに変更
+                        Player.game_state = GAMEOVER
+                        record_score()
+                        break
+            if Player.game_state == GAMEOVER: break
+        # ゲームクリアチェック
+        if self.cleared_lines >= 1:
+            # ゲームクリア音再生
+            sound_instance.game_clear.play()
+            record_score()
+            Player.game_state = GAMECLEAR
 
 class Ghost:
     def __init__(self):
