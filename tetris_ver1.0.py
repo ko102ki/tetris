@@ -3,6 +3,7 @@ import pygame
 import sys
 from pygame.locals import *
 import copy
+from random import randint
 
 # control
 LEFT = 0
@@ -18,6 +19,7 @@ TITLE = 0
 PLAY = 1
 GAMEOVER = 2
 GAMECLEAR = 3
+GAMECLEAR_LINE = 200
 # draw
 CELL = 24  # ブロック1つ(1マス)の大きさ
 
@@ -164,6 +166,7 @@ class Field:
         self.clear_lines = []  # 消去するライン
         # 自由落下用変数
         self.fall_interval = 1000
+#        self.fall_interval = 0.00095
         self.fall_time_sum = 0
         # 固定時間設定用変数
         self.fix_time_sum = 0
@@ -310,10 +313,6 @@ class Field:
                 sound_instance.level_up.play()
         # ゲームクリア判定
         self.game_over_check()
-#        if self.cleared_lines >= 150:
-#            # ゲームクリア音再生
-#            sound_instance.game_clear.play()
-#            Player.game_state = GAMECLEAR
 
     def free_fall(self, time):
         if self.fall_time_sum >= self.fall_interval:
@@ -485,9 +484,7 @@ class Field:
             if len(score_list) < 3:
                 for i in range(3):
                     score_file.write('0\n')
-#        if not Player.game_state == GAMEOVER:
-#            if not Player.game_state == GAMECLEAR:
-            # ゲームオーバーチェック
+        # ゲームオーバーチェック
         for y in range(0, 2):
             for x in range(self.field_width):
                 if self.field[y][x] != 0:
@@ -500,7 +497,7 @@ class Field:
                         break
             if Player.game_state == GAMEOVER: break
         # ゲームクリアチェック
-        if self.cleared_lines >= 1:
+        if self.cleared_lines >= GAMECLEAR_LINE:
             # ゲームクリア音再生
             sound_instance.game_clear.play()
             record_score()
@@ -524,8 +521,9 @@ class Draw():
     def __init__(self):
         self.block_img = []
         self.load_image()
-        screen_size = (CELL * 27, CELL * 27)
+        screen_size = (CELL * 25, CELL * 26)
         self.screen = pygame.display.set_mode(screen_size)
+        self.first = True
 
         # フォント準備
         self.title_font = pygame.font.Font('data/mplus-1m-bold.ttf', 80)
@@ -577,9 +575,37 @@ class Draw():
         self.clear_display_time_sum = 0
 
     def draw_title(self):
-        self.screen.fill((0, 0, 0))
-        self.screen.blit(self.title_str, (50, 50))
-        self.screen.blit(self.press_str, (50, 200))
+        title_left_margin = CELL * 7
+        title_top_margin = CELL * 3
+        if self.first:
+            self.screen.fill((0, 0, 0))
+#            self.screen.blit(self.title_str, (50, 50))
+            self.screen.blit(self.press_str, (80, 550))
+#            i = randint(1, 8)
+            for x in range(1, 11):
+                i = randint(1, 7)
+                self.blit_img(i, x, 1, title_left_margin, title_top_margin)
+                i = randint(1, 7)
+                self.blit_img(i, x, 2, title_left_margin, title_top_margin)
+            for x in range(1, 17):
+                i = randint(1, 7)
+                self.blit_img(i, x, 5, title_left_margin-CELL*3, title_top_margin)
+                i = randint(1, 7)
+                self.blit_img(i, x, 6, title_left_margin-CELL*3, title_top_margin)
+            for (x, y) in zip(range(8, 3, -1), range(7, 20, 2)):
+                i = randint(1, 7)
+                self.blit_img(i, x, y, title_left_margin-CELL*3, title_top_margin)
+                i = randint(1, 7)
+                self.blit_img(i, x, y+1, title_left_margin-CELL*3, title_top_margin)
+                i = randint(1, 7)
+                self.blit_img(i, x+1, y, title_left_margin-CELL*3, title_top_margin)
+                i = randint(1, 7)
+                self.blit_img(i, x+1, y+1, title_left_margin-CELL*3, title_top_margin)
+            self.first = False
+#        for y in range(6,10):
+#            self.blit_img(1, x, y, title_left_margin-CELL*3, title_top_margin)
+
+#        self.screen.blit
 
     def draw_game_over(self, clear):
         # 画面を黒で塗りつぶし
@@ -661,7 +687,7 @@ class Draw():
         # LEVEL UP表示
         if self.level_up_flag:
             if self.level_up_time <= 2000:
-                self.screen.blit(self.level_up_str, (self.hold_left_margin + CELL * 8, self.hold_top_margin + CELL * 20 - 10))
+                self.screen.blit(self.level_up_str, (self.hold_left_margin + CELL * 8, self.hold_top_margin + CELL * 19))
             else:
                 self.level_up_time = 0
                 self.level_up_flag = False
@@ -838,6 +864,7 @@ class Player:
                 if event.key == K_SPACE:
                     Player.game_state = PLAY
 
+
     def key_handler(self, time):
         # キーモジュール方式
         pressed = pygame.key.get_pressed()
@@ -979,6 +1006,7 @@ class Player:
 
 class Sound:
     def __init__(self):
+        # SE
         self.fix_sound = pygame.mixer.Sound('data/fix.wav')
         self.hard_sound = pygame.mixer.Sound('data/hard.wav')
         self.rotate_sound = pygame.mixer.Sound('data/rotate.wav')
@@ -996,9 +1024,9 @@ class Sound:
         self.level_up = pygame.mixer.Sound('data/level_up.wav')
         self.game_clear = pygame.mixer.Sound('data/game_clear.wav')
         self.game_over = pygame.mixer.Sound('data/game_over.wav')
-
-#        pygame.mixer.music.load('data/bgm01_loop.ogg')
-#        pygame.mixer.music.set_volume(0.3)
+        # BGM
+        pygame.mixer.music.load('data/bgm01_loop.ogg')
+        pygame.mixer.music.set_volume(0.3)
 
 
 # main
@@ -1019,7 +1047,7 @@ while True:
         play_init = True
 
     if Player.game_state == GAMEOVER or Player.game_state == GAMECLEAR:
-#        pygame.mixer.music.stop()
+        pygame.mixer.music.stop()
         if Player.game_state == GAMEOVER:
             draw_instance.draw_game_over(clear=False)
         if Player.game_state == GAMECLEAR:
@@ -1038,10 +1066,9 @@ while True:
             ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
             field_instance.ghost_mapping() # ゴーストブロックをマッピング
             field_instance.mapping(block_instance, DROP)  # フィールドにマッピング
-#            pygame.mixer.music.play(-1)
+            pygame.mixer.music.play(-1)
             # ゲーム開始前の初期化処理が完了
             play_init = False
-
 
         if field_instance.fixed:
             block_instance.pop_block()  # ブロックを生成
@@ -1062,3 +1089,4 @@ while True:
         draw_instance.draw_play(time_passed)
         pygame.display.update()
         print(clock.get_fps())
+        print(field_instance.fall_time_sum)
