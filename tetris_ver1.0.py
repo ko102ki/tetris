@@ -5,6 +5,7 @@ from pygame.locals import *
 import copy
 from random import randint
 
+# グローバル変数もどき
 # control
 LEFT = 0
 RIGHT = 1
@@ -19,14 +20,11 @@ TITLE = 0
 PLAY = 1
 GAMEOVER = 2
 GAMECLEAR = 3
-GAMECLEAR_LINE = 200
+GAMECLEAR_LINE = 150
 # draw
 CELL = 24  # ブロック1つ(1マス)の大きさ
 
 class Block:
-
-    drop_time = 0
-
     def __init__(self):
         self.next = []  # ネクストブロック7種を入れる
         self.next_spare = []  # ネクストブロック7種を入れる
@@ -166,7 +164,6 @@ class Field:
         self.clear_lines = []  # 消去するライン
         # 自由落下用変数
         self.fall_interval = 1000
-#        self.fall_interval = 0.00095
         self.fall_time_sum = 0
         # 固定時間設定用変数
         self.fix_time_sum = 0
@@ -181,6 +178,7 @@ class Field:
         self.store_location = copy.deepcopy(block_instance.location)
         # スコア計算用変数
         self.score = 0
+        self.btb_flag = False
         # REN用変数,Flag
         self.ren = 0
         self.ren_flag = False
@@ -350,11 +348,8 @@ class Field:
         self.score_count()
         # ライン消去
         self.line_clear()
-#        # 固定されたらT−SpinのフラグをFalseに
-#        self.t_spin_flag = False
         self.fixed = True
         self.fixing = False
-#        self.game_over_check()
 
     def hard_drop(self):
 #        self.mapping(block_instance, CLEAR)
@@ -430,28 +425,51 @@ class Field:
         score = 0
         if cleared_lines == 1:
             if self.t_spin_flag:
+                if self.btb_flag:
+                    score = 1200
+                    draw_instance.btb_str_flag = True
+                else:
+                    score = 800
+                    self.btb_flag = True
                 draw_instance.t_spin_type = 'Single!'
                 sound_instance.t_spin_sound.play()
-                score = 800
             else:
                 score = 100
+                self.btb_flag = False
         elif cleared_lines == 2:
             if self.t_spin_flag:
+                if self.btb_flag:
+                    score = 1800
+                    draw_instance.btb_str_flag = True
+                else:
+                    score = 1200
+                    self.btb_flag = True
                 draw_instance.t_spin_type = 'Double!'
                 sound_instance.t_spin_sound.play()
-                score = 1200
             else:
                 score = 300
+                self.btb_flag = False
         elif cleared_lines == 3:
             if self.t_spin_flag:
+                if self.btb_flag:
+                    score = 2400
+                    draw_instance.btb_str_flag = True
+                else:
+                    score = 1600
+                    self.btb_flag = True
                 draw_instance.t_spin_type = 'Triple!'
                 sound_instance.t_spin_sound.play()
-                score = 1600
             else:
                 score = 500
+                self.btb_flag = False
         elif cleared_lines == 4:
+            if self.btb_flag:
+                score = 1200
+                draw_instance.btb_str_flag = True
+            else:
+                score = 800
+                self.btb_flag = True
             draw_instance.tetris_str_flag = True
-            score = 800
         else:
             if self.t_spin_flag:
                 draw_instance.t_spin_type = ' '
@@ -524,12 +542,9 @@ class Draw():
         screen_size = (CELL * 25, CELL * 26)
         self.screen = pygame.display.set_mode(screen_size)
         self.first = True
-
         # フォント準備
         self.title_font = pygame.font.Font('data/mplus-1m-bold.ttf', 80)
-#        self.title_font.set_bold(True)
         self.game_font = pygame.font.Font('data/mplus-1m-bold.ttf', 30)
-#        self.game_font.set_bold(True)
         # TITLE
         self.title_str = self.title_font.render('テ', True, (255, 255, 255))
         self.press_str = self.game_font.render('スペースキーを押してスタート!', True, (255, 255, 255))
@@ -537,14 +552,13 @@ class Draw():
         self.gameover_str = self.title_font.render('GAME OVER', True, (255, 255, 255))
         self.gameclear_str = self.title_font.render('GAME CLEAR!!', True, (255, 255, 255))
         self.record_str = self.game_font.render('ランキング', True, (255, 255, 255))
-        self.retry_str = self.game_font.render('スペースキーでもう一度プレイ', True, (255, 255, 255))
+        self.retry_str = self.game_font.render('スペースキーでタイトルに戻る', True, (255, 255, 255))
         # PLAY
         self.score_str = self.game_font.render('SCORE', True, (255, 255, 255))
         self.hold_str = self.game_font.render('HOLD', True, (255, 255, 255))
         self.next_str = self.game_font.render('NEXT', True, (255, 255, 255))
         self.lines_str = self.game_font.render('LINES', True, (255, 255, 255))
         self.level_str = self.game_font.render('LEVEL', True, (255, 255, 255))
-
         # PLAY用変数
         self.field_left_margin = CELL * 4  # +3が実際の表示領域
         self.field_top_margin = CELL * 1  # +2が実際の表示領域
@@ -552,24 +566,22 @@ class Draw():
         self.next_top_margin = CELL * 5
         self.hold_left_margin = CELL * 1
         self.hold_top_margin = CELL * 5
-
         # TETRIS表示用
         self.tetris_str_flag = False
         self.tetris_time = 0
-
         # REN表示用
         self.ren_number = 0
         self.ren_time = 0
-
         # T-spin表示用
         self.t_spin_type = None
         self.t_spin_time = 0
-
+        # Back to Back表示用
+        self.btb_str_flag = False
+        self.btb_time = 0
         # LEVEL UP用
         self.level_up_str = self.game_font.render('LEVEL UP!', True, (255, 255, 255))
         self.level_up_flag = False
         self.level_up_time = 0
-
         # クリアエフェクト表示時間
         self.clear_display_time = 2000
         self.clear_display_time_sum = 0
@@ -579,9 +591,7 @@ class Draw():
         title_top_margin = CELL * 3
         if self.first:
             self.screen.fill((0, 0, 0))
-#            self.screen.blit(self.title_str, (50, 50))
             self.screen.blit(self.press_str, (80, 550))
-#            i = randint(1, 8)
             for x in range(1, 11):
                 i = randint(1, 7)
                 self.blit_img(i, x, 1, title_left_margin, title_top_margin)
@@ -602,10 +612,6 @@ class Draw():
                 i = randint(1, 7)
                 self.blit_img(i, x+1, y+1, title_left_margin-CELL*3, title_top_margin)
             self.first = False
-#        for y in range(6,10):
-#            self.blit_img(1, x, y, title_left_margin-CELL*3, title_top_margin)
-
-#        self.screen.blit
 
     def draw_game_over(self, clear):
         # 画面を黒で塗りつぶし
@@ -651,7 +657,6 @@ class Draw():
         # LEVEL表示
         level_num = self.game_font.render(str(field_instance.level), True, (255, 255, 255))
         self.screen.blit(level_num, (self.hold_left_margin, self.hold_top_margin + CELL * 10))
-
         # TETRIS描画用
         if self.tetris_str_flag:
             if self.tetris_time <= 2000:
@@ -661,7 +666,6 @@ class Draw():
                 self.tetris_time = 0
                 self.tetris_str_flag = False
             self.tetris_time += time
-
         # REN描画用
         if self.ren_number:
             if self.ren_time <= 2000:
@@ -671,7 +675,6 @@ class Draw():
                 self.ren_time = 0
                 self.ren_number = 0
             self.ren_time += time
-
         # T-spin描画用
         if self.t_spin_type:
             if self.t_spin_time <= 2000:
@@ -683,7 +686,19 @@ class Draw():
                 self.t_spin_time = 0
                 self.t_spin_type = None
             self.t_spin_time += time
-
+        # Back to Back描画用
+        if self.btb_str_flag:
+            if self.btb_time <= 2000:
+                self.btb_str1 = self.game_font.render('Back', True, (255, 255, 255))
+                self.btb_str2 = self.game_font.render('to', True, (255, 255, 255))
+                self.btb_str3 = self.game_font.render('Back!', True, (255, 255, 255))
+                self.screen.blit(self.btb_str1, (self.hold_left_margin, self.hold_top_margin + CELL * 17))
+                self.screen.blit(self.btb_str2, (self.hold_left_margin + CELL * 1, self.hold_top_margin + CELL * 18))
+                self.screen.blit(self.btb_str3, (self.hold_left_margin + CELL * 1, self.hold_top_margin + CELL * 19))
+            else:
+                self.btb_time = 0
+                self.btb_str_flag = False
+            self.btb_time += time
         # LEVEL UP表示
         if self.level_up_flag:
             if self.level_up_time <= 2000:
@@ -692,8 +707,6 @@ class Draw():
                 self.level_up_time = 0
                 self.level_up_flag = False
             self.level_up_time += time
-
-
         # field描画用
         for y in range(2, Field.field_height - 2):
             for x in range(2, Field.field_width - 2):
@@ -722,7 +735,6 @@ class Draw():
         def change_alpha(index):
             pattern_len = len(block_instance.pattern)
             for a in range(100):
-#            for a in range(1,2):
                 for y in range(pattern_len):
                     for x in range(pattern_len):
                         if block_instance.pattern[y][x]:
@@ -731,11 +743,9 @@ class Draw():
                             self.block_img[index].set_alpha(a)
                             self.screen.blit(self.block_img[index], (self.field_left_margin + field_x * CELL, self.field_top_margin + field_y * CELL))
                 pygame.display.update()
-
         block_index = block_instance.return_now_pattern() - 1
         change_alpha(8)
         change_alpha(block_index)
-
 
     def clear_effect(self):
         block_size = 24
@@ -864,6 +874,14 @@ class Player:
                 if event.key == K_SPACE:
                     Player.game_state = PLAY
 
+    def gameover_key_handler(self):
+        for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    sys.exit()
+                if event.key == K_SPACE:
+                    draw_instance.first = True
+                    Player.game_state = TITLE
 
     def key_handler(self, time):
         # キーモジュール方式
@@ -1039,24 +1057,26 @@ draw_instance = Draw()
 sound_instance = Sound()
 
 while True:
-
+    # タイトル画面用処理
     if Player.game_state == TITLE:
         draw_instance.draw_title()
         player_instance.title_key_handler()
         pygame.display.update()
         play_init = True
-
+    # ゲームオーバー・ゲームクリア画面用処理
     if Player.game_state == GAMEOVER or Player.game_state == GAMECLEAR:
         pygame.mixer.music.stop()
         if Player.game_state == GAMEOVER:
             draw_instance.draw_game_over(clear=False)
         if Player.game_state == GAMECLEAR:
             draw_instance.draw_game_over(clear=True)
-        player_instance.title_key_handler()
+#        player_instance.title_key_handler()
+        player_instance.gameover_key_handler()
         pygame.display.update()
         play_init = True
-
+    # ゲームプレイ用処理
     if Player.game_state == PLAY:
+        # 初期化処理が必要な場合のみ実行
         if play_init:
             block_instance = Block()
             block_instance.create_next()  # ツモ作成
@@ -1067,9 +1087,8 @@ while True:
             field_instance.ghost_mapping() # ゴーストブロックをマッピング
             field_instance.mapping(block_instance, DROP)  # フィールドにマッピング
             pygame.mixer.music.play(-1)
-            # ゲーム開始前の初期化処理が完了
-            play_init = False
-
+            play_init = False  # 初期化処理が完了
+        # ブロックが固定されていたらインスタンス再生成
         if field_instance.fixed:
             block_instance.pop_block()  # ブロックを生成
             ghost_instance = Ghost()  # ゴーストブロックを生成
@@ -1078,15 +1097,15 @@ while True:
             field_instance.fixed = False
             field_instance.t_spin_flag = False
             field_instance.hold = False
-
+        # mainの処理（Play時は常に実行）
         time_passed = clock.tick_busy_loop(60)
         field_instance.free_fall(time_passed)  # 自由落下処理
         player_instance.key_handler(time_passed)  # キー入力受付
         field_instance.pre_fix(time_passed)  # 固定処理
-        if field_instance.line_clear_flag:
+        if field_instance.line_clear_flag:  # ラインクリアが必要か
             draw_instance.clear_effect()
             pygame.time.wait(100)
         draw_instance.draw_play(time_passed)
         pygame.display.update()
-        print(clock.get_fps())
-        print(field_instance.fall_time_sum)
+#        print(clock.get_fps())
+#        print(field_instance.fall_time_sum)
