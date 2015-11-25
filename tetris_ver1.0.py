@@ -695,7 +695,8 @@ class Draw():
     def fix_effect(self):
         def change_alpha(index):
             pattern_len = len(block_instance.pattern)
-            for a in range(256):
+            for a in range(100):
+#            for a in range(1,2):
                 for y in range(pattern_len):
                     for x in range(pattern_len):
                         if block_instance.pattern[y][x]:
@@ -996,8 +997,8 @@ class Sound:
         self.game_clear = pygame.mixer.Sound('data/game_clear.wav')
         self.game_over = pygame.mixer.Sound('data/game_over.wav')
 
-        pygame.mixer.music.load('data/bgm01_loop.ogg')
-        pygame.mixer.music.set_volume(0.3)
+#        pygame.mixer.music.load('data/bgm01_loop.ogg')
+#        pygame.mixer.music.set_volume(0.3)
 
 
 # main
@@ -1018,7 +1019,7 @@ while True:
         play_init = True
 
     if Player.game_state == GAMEOVER or Player.game_state == GAMECLEAR:
-        pygame.mixer.music.stop()
+#        pygame.mixer.music.stop()
         if Player.game_state == GAMEOVER:
             draw_instance.draw_game_over(clear=False)
         if Player.game_state == GAMECLEAR:
@@ -1037,7 +1038,7 @@ while True:
             ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
             field_instance.ghost_mapping() # ゴーストブロックをマッピング
             field_instance.mapping(block_instance, DROP)  # フィールドにマッピング
-            pygame.mixer.music.play(-1)
+#            pygame.mixer.music.play(-1)
             # ゲーム開始前の初期化処理が完了
             play_init = False
 
@@ -1051,7 +1052,7 @@ while True:
             field_instance.t_spin_flag = False
             field_instance.hold = False
 
-        time_passed = clock.tick(60)
+        time_passed = clock.tick_busy_loop(60)
         field_instance.free_fall(time_passed)  # 自由落下処理
         player_instance.key_handler(time_passed)  # キー入力受付
         field_instance.pre_fix(time_passed)  # 固定処理
@@ -1060,3 +1061,4 @@ while True:
             pygame.time.wait(100)
         draw_instance.draw_play(time_passed)
         pygame.display.update()
+        print(clock.get_fps())
