@@ -20,7 +20,7 @@ TITLE = 0
 PLAY = 1
 GAMEOVER = 2
 GAMECLEAR = 3
-GAMECLEAR_LINE = 150
+GAMECLEAR_LINE = 200
 # draw
 CELL = 24  # ブロック1つ(1マス)の大きさ
 
@@ -187,7 +187,8 @@ class Field:
         # 消したライン数
         self.cleared_lines = 0
         # LEVEL
-        self.level = 1
+        self.level = 0
+        self.over_1g = False
 
     def mapping(self, block, process):
         field_x = block.location[0]
@@ -303,12 +304,24 @@ class Field:
         # 消去済みライン数更新
         self.cleared_lines += len(self.clear_lines)
         # LEVEL UP 処理
-        for i in range(1, 15):
+        for i in range(1, 20):
             if self.level == i and self.cleared_lines >= i*10:
-                self.level += 1
-                self.fall_interval /= 2
                 draw_instance.level_up_flag = True
                 sound_instance.level_up.play()
+                self.level += 1
+                self.fall_interval /= 1.45
+                if i > 12: self.over_1g = True
+                if i == 12: self.g = 1
+                if i == 13: self.g = 2
+                if i == 14: self.g = 3
+                if i == 15: self.g = 4
+                if i == 16: self.g = 5
+                if i == 17: self.g = 9
+                if i == 18: self.g = 13
+                if i == 19: self.g = 15
+                if i == 20: self.g = 20
+
+
         # ゲームクリア判定
         self.game_over_check()
 
@@ -350,6 +363,7 @@ class Field:
         self.line_clear()
         self.fixed = True
         self.fixing = False
+        pygame.time.wait(100)
 
     def hard_drop(self):
 #        self.mapping(block_instance, CLEAR)
@@ -1099,7 +1113,11 @@ while True:
             field_instance.hold = False
         # mainの処理（Play時は常に実行）
         time_passed = clock.tick_busy_loop(60)
-        field_instance.free_fall(time_passed)  # 自由落下処理
+        if field_instance.over_1g:
+            for i in range(field_instance.g):
+                field_instance.free_fall(1000)
+        else:
+            field_instance.free_fall(time_passed)  # 自由落下処理
         player_instance.key_handler(time_passed)  # キー入力受付
         field_instance.pre_fix(time_passed)  # 固定処理
         if field_instance.line_clear_flag:  # ラインクリアが必要か
@@ -1109,3 +1127,4 @@ while True:
         pygame.display.update()
 #        print(clock.get_fps())
 #        print(field_instance.fall_time_sum)
+#        print(time_passed)
