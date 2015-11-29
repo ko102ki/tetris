@@ -173,6 +173,7 @@ class Field:
         self.fix_time_sum = 0
         self.time_to_fix = 500
         self.fixing = False
+        self.action_count = 0  # fixingの処理に入ってからの回転や移動の回数をカウント
         # 固定用フラグ
         self.fixed = False
         # hold用フラグ
@@ -939,7 +940,11 @@ class Player:
                             field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
                             field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
                             sound_instance.control_sound.play()  # 移動音再生
-                            field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+                            if field_instance.fixing:
+                                field_instance.action_count += 1  # 行動回数を+1
+                                if field_instance.action_count >= 16: field_instance.fix_time_sum = 1000
+                                else: field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+#                            field_instance.fix_time_sum = 0  # 固定までの時間をリセット
                             block_instance.control(LEFT)
                             ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                             field_instance.ghost_mapping() # ゴーストブロックをマッピング
@@ -960,7 +965,11 @@ class Player:
                             field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
                             field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
                             sound_instance.control_sound.play()  # 移動音再生
-                            field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+                            if field_instance.fixing:
+                                field_instance.action_count += 1  # 行動回数を+1
+                                if field_instance.action_count >= 16: field_instance.fix_time_sum = 1000
+                                else: field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+#                            field_instance.fix_time_sum = 0  # 固定までの時間をリセット
                             block_instance.control(RIGHT)
                             ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                             field_instance.ghost_mapping() # ゴーストブロックをマッピング
@@ -997,7 +1006,11 @@ class Player:
                         field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
                         field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
                         sound_instance.control_sound.play()  # 移動音再生
-                        field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+                        if field_instance.fixing:
+                            field_instance.action_count += 1  # 行動回数を+1
+                            if field_instance.action_count >= 16: field_instance.fix_time_sum = 1000
+                            else: field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+#                        field_instance.fix_time_sum = 0  # 固定までの時間をリセット
                         block_instance.control(LEFT)
                         ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                         field_instance.ghost_mapping() # ゴーストブロックをマッピング
@@ -1008,7 +1021,11 @@ class Player:
                         field_instance.mapping(block_instance, CLEAR)  # フィールドからブロックを削除
                         field_instance.mapping(ghost_instance, CLEAR)  # フィールドからゴーストブロックを削除
                         sound_instance.control_sound.play()  # 移動音再生
-                        field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+                        if field_instance.fixing:
+                            field_instance.action_count += 1  # 行動回数を+1
+                            if field_instance.action_count >= 16: field_instance.fix_time_sum = 1000
+                            else: field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+#                        field_instance.fix_time_sum = 0  # 固定までの時間をリセット
                         block_instance.control(RIGHT)
                         ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                         field_instance.ghost_mapping() # ゴーストブロックをマッピング
@@ -1022,7 +1039,11 @@ class Player:
                     if field_instance.rotate_hit(block_instance):
                         block_instance.rotate(RIGHT)
                     else:
-                        field_instance.fix_time_sum = 0
+                        if field_instance.fixing:
+                            field_instance.action_count += 1  # 行動回数を+1
+                            if field_instance.action_count >= 16: field_instance.fix_time_sum = 1000
+                            else: field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+#                        field_instance.fix_time_sum = 0
                     ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                     field_instance.ghost_mapping() # ゴーストブロックをマッピング
                     field_instance.mapping(block_instance, DROP)
@@ -1035,7 +1056,11 @@ class Player:
                     if field_instance.rotate_hit(block_instance):
                         block_instance.rotate(LEFT)
                     else:
-                        field_instance.fix_time_sum = 0
+                        if field_instance.fixing:
+                            field_instance.action_count += 1  # 行動回数を+1
+                            if field_instance.action_count >= 16: field_instance.fix_time_sum = 1000
+                            else: field_instance.fix_time_sum = 0  # 固定までの時間をリセット
+#                        field_instance.fix_time_sum = 0
                     ghost_instance.update()  # ゴーストブロックの座標をブロックのものに更新
                     field_instance.ghost_mapping() # ゴーストブロックをマッピング
                     field_instance.mapping(block_instance, DROP)  #ブロックをマッピング
