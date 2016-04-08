@@ -553,7 +553,7 @@ class Draw():
     def __init__(self):
         self.block_img = []
         self.load_image()
-        screen_size = (CELL * 25, CELL * 26)
+        screen_size = (CELL * 25, CELL * 26) # 600, 624
         self.screen = pygame.display.set_mode(screen_size)
         self.first = True
         # フォント準備
@@ -567,6 +567,8 @@ class Draw():
         self.gameclear_str = self.title_font.render('GAME CLEAR!!', True, (255, 255, 255))
         self.record_str = self.game_font.render('ランキング', True, (255, 255, 255))
         self.retry_str = self.game_font.render('スペースキーでタイトルに戻る', True, (255, 255, 255))
+        self.go_record_str = self.game_font.render('スペースキーを押してください', True, (255, 255, 255))
+        self.block_filled = False
         # PLAY
         self.score_str = self.game_font.render('SCORE', True, (255, 255, 255))
         self.hold_str = self.game_font.render('HOLD', True, (255, 255, 255))
@@ -601,33 +603,109 @@ class Draw():
         self.clear_display_time_sum = 0
 
     def draw_title(self):
-        title_left_margin = CELL * 7
-        title_top_margin = CELL * 3
+        #title_left_margin = CELL * 7
+        #title_top_margin = CELL * 3
+        title_left_margin = CELL * 0
+        title_top_margin = CELL * 0
         if self.first:
             self.screen.fill((0, 0, 0))
             self.screen.blit(self.press_str, (80, 550))
-            for x in range(1, 11):
-                i = randint(1, 7)
-                self.blit_img(i, x, 1, title_left_margin, title_top_margin)
-                i = randint(1, 7)
-                self.blit_img(i, x, 2, title_left_margin, title_top_margin)
-            for x in range(1, 17):
-                i = randint(1, 7)
-                self.blit_img(i, x, 5, title_left_margin-CELL*3, title_top_margin)
-                i = randint(1, 7)
-                self.blit_img(i, x, 6, title_left_margin-CELL*3, title_top_margin)
-            for (x, y) in zip(range(8, 3, -1), range(7, 20, 2)):
-                i = randint(1, 7)
-                self.blit_img(i, x, y, title_left_margin-CELL*3, title_top_margin)
-                i = randint(1, 7)
-                self.blit_img(i, x, y+1, title_left_margin-CELL*3, title_top_margin)
-                i = randint(1, 7)
-                self.blit_img(i, x+1, y, title_left_margin-CELL*3, title_top_margin)
-                i = randint(1, 7)
-                self.blit_img(i, x+1, y+1, title_left_margin-CELL*3, title_top_margin)
+            i = randint(1, 7)
+            for x in range(1, 24):
+                if not x % 4 == 0:
+            #        i = randint(1, 7)
+                    self.blit_img(i, x, 1, title_left_margin, title_top_margin)
+                #i = randint(1, 7)
+                #self.blit_img(i, x, 2, title_left_margin, title_top_margin)
+            for y in range(2, 6):
+            #    i = randint(1, 7)
+                self.blit_img(i, 2, y, title_left_margin, title_top_margin)
+                self.blit_img(i, 5, y, title_left_margin, title_top_margin)
+                self.blit_img(i, 10, y, title_left_margin, title_top_margin)
+                self.blit_img(i, 13, y, title_left_margin, title_top_margin)
+                self.blit_img(i, 18, y, title_left_margin, title_top_margin)
+
+            for x in range(6, 8):
+            #    i = randint(1, 7)
+                self.blit_img(i, x, 3, title_left_margin, title_top_margin)
+                self.blit_img(i, x, 5, title_left_margin, title_top_margin)
+
+            #i = randint(1, 7)
+            self.blit_img(i, 15, 2, title_left_margin, title_top_margin)
+            self.blit_img(i, 14, 3, title_left_margin, title_top_margin)
+            self.blit_img(i, 15, 4, title_left_margin, title_top_margin)
+            self.blit_img(i, 15, 5, title_left_margin, title_top_margin)
+            self.blit_img(i, 17, 5, title_left_margin, title_top_margin)
+            self.blit_img(i, 19, 5, title_left_margin, title_top_margin)
+
+            self.blit_img(i, 23, 2, title_left_margin, title_top_margin)
+            self.blit_img(i, 22, 3, title_left_margin, title_top_margin)
+            self.blit_img(i, 21, 4, title_left_margin, title_top_margin)
+            for x in range(21, 24):
+            #    i = randint(1, 7)
+                self.blit_img(i, x, 5, title_left_margin, title_top_margin)
+
+            #    self.blit_img(i, y, 1, title_left_margin, title_top_margin)
+            #    i = randint(1, 7)
+            #    self.blit_img(i, y, 2, title_left_margin, title_top_margin)
+
+#            for x in range(1, 17):
+#                i = randint(1, 7)
+#                self.blit_img(i, x, 5, title_left_margin-CELL*3, title_top_margin)
+#                i = randint(1, 7)
+#                self.blit_img(i, x, 6, title_left_margin-CELL*3, title_top_margin)
+#            for (x, y) in zip(range(8, 3, -1), range(7, 20, 2)):
+#                i = randint(1, 7)
+#                self.blit_img(i, x, y, title_left_margin-CELL*3, title_top_margin)
+#                i = randint(1, 7)
+#                self.blit_img(i, x, y+1, title_left_margin-CELL*3, title_top_margin)
+#                i = randint(1, 7)
+#                self.blit_img(i, x+1, y, title_left_margin-CELL*3, title_top_margin)
+#                i = randint(1, 7)
+#                self.blit_img(i, x+1, y+1, title_left_margin-CELL*3, title_top_margin)
             self.first = False
 
-    def draw_game_over(self, clear):
+    #def draw_title(self):
+    #    title_left_margin = CELL * 7
+    #    title_top_margin = CELL * 3
+    #    if self.first:
+    #        self.screen.fill((0, 0, 0))
+    #        self.screen.blit(self.press_str, (80, 550))
+    #        for x in range(1, 11):
+    #            i = randint(1, 7)
+    #            self.blit_img(i, x, 1, title_left_margin, title_top_margin)
+    #            i = randint(1, 7)
+    #            self.blit_img(i, x, 2, title_left_margin, title_top_margin)
+    #        for x in range(1, 17):
+    #            i = randint(1, 7)
+    #            self.blit_img(i, x, 5, title_left_margin-CELL*3, title_top_margin)
+    #            i = randint(1, 7)
+    #            self.blit_img(i, x, 6, title_left_margin-CELL*3, title_top_margin)
+    #        for (x, y) in zip(range(8, 3, -1), range(7, 20, 2)):
+    #            i = randint(1, 7)
+    #            self.blit_img(i, x, y, title_left_margin-CELL*3, title_top_margin)
+    #            i = randint(1, 7)
+    #            self.blit_img(i, x, y+1, title_left_margin-CELL*3, title_top_margin)
+    #            i = randint(1, 7)
+    #            self.blit_img(i, x+1, y, title_left_margin-CELL*3, title_top_margin)
+    #            i = randint(1, 7)
+    #            self.blit_img(i, x+1, y+1, title_left_margin-CELL*3, title_top_margin)
+    #        self.first = False
+
+    def draw_game_over(self):
+        # ブロックでフィールドを下から塗りつぶす
+        if not self.block_filled:
+            for y in reversed(range(2, Field.field_height - 3)):
+                for x in range(3, Field.field_width - 3):
+                    #                code = field_instance.field[y][x]
+                    code = 99
+                    self.blit_img(code, x, y, self.field_left_margin, self.field_top_margin)
+                pygame.display.update()
+                pygame.time.wait(100)
+            self.screen.blit(self.go_record_str, (96, 12))
+            self.block_filled = True
+
+    def draw_result(self, clear):
         # 画面を黒で塗りつぶし
         self.screen.fill((0, 0, 0))
         # ゲームオーバーの文字を表示
@@ -879,6 +957,8 @@ class Player:
         self.down_time = 0
         self.left_time = 0
         self.right_time = 0
+        # ゲームオーバー後の画面遷移用フラグ
+        self.go_result = False
 
     def title_key_handler(self):
         for event in pygame.event.get():
@@ -888,13 +968,23 @@ class Player:
                 if event.key == K_SPACE:
                     Player.game_state = PLAY
 
-    def gameover_key_handler(self):
+    def game_over_key_handler(self):
+        for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    sys.exit()
+                if event.key == K_SPACE:
+                    self.go_result = True
+                    draw_instance.block_filled = False
+
+    def result_key_handler(self):
         for event in pygame.event.get():
             if event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     sys.exit()
                 if event.key == K_SPACE:
                     draw_instance.first = True
+                    self.go_result = False
                     Player.game_state = TITLE
 
     def key_handler(self, time):
@@ -1065,6 +1155,7 @@ class Sound:
 play_init = True  # ゲーム開始前の初期化処理が必要か
 pygame.mixer.pre_init(44100, -16, 2, 1024)  # 音ズレ防止用
 pygame.init()
+pygame.display.set_caption('TETRIZ')
 clock = pygame.time.Clock()
 player_instance = Player()
 draw_instance = Draw()
@@ -1081,11 +1172,17 @@ while True:
     if Player.game_state == GAMEOVER or Player.game_state == GAMECLEAR:
         pygame.mixer.music.stop()
         if Player.game_state == GAMEOVER:
-            draw_instance.draw_game_over(clear=False)
+            if not player_instance.go_result:
+                draw_instance.draw_game_over()
+                player_instance.game_over_key_handler()
+            elif player_instance.go_result:
+                draw_instance.draw_result(clear=False)
+                player_instance.result_key_handler()
         if Player.game_state == GAMECLEAR:
-            draw_instance.draw_game_over(clear=True)
+            player_instance.result_key_handler()
+            draw_instance.draw_result(clear=True)
 #        player_instance.title_key_handler()
-        player_instance.gameover_key_handler()
+#        player_instance.result_key_handler()
         pygame.display.update()
         play_init = True
     # ゲームプレイ用処理
