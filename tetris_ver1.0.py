@@ -187,7 +187,7 @@ class Field:
         # 消したライン数
         self.cleared_lines = 0
         # LEVEL
-        self.level = 0
+        self.level = 1
         self.over_1g = False
 
     def mapping(self, block, process):
