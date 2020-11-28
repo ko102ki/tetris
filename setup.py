@@ -11,9 +11,16 @@
 
 from cx_Freeze import setup, Executable
 
+target = Executable(
+    script='tetriz_ver1_1.py',
+    icon='data/exe_icon.ico',
+    base='Win32GUI'
+)
+
 setup(
-    name = "tetris" ,
-    version = "0.1" ,
-    description = "tetris" ,
-    executables = [Executable("tetris_ver1_0.py")]  ,
+    name = 'tetriz' ,
+    version = '1.1' ,
+    description = 'tetriz' ,
+    #executables = [Executable('tetris_ver1_1.py')]  ,
+    executables = [target]  ,
 )
